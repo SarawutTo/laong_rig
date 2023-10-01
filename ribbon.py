@@ -1,4 +1,23 @@
 import maya.cmds as mc
+from . import rig_base
+
+
+class RibbonRig(rig_base.Rigbase):
+    def __init__(
+        self,
+        start_loc,
+        end_loc,
+        ctrl_amount,
+        joint_amount,
+        mod,
+        desc,
+        meta_parent,
+        still_parent,
+    ):
+        super(RibbonRig, self).__init__(mod, desc)
+
+        self.meta = self.create_meta(meta_parent)
+        self.still = self.create_still(still_parent)
 
 
 def create_follicle(ctrl_amount, follicle_amount):

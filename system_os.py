@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import maya.cmds as mc
-import importlib
 
 
 def get_cwd():
@@ -27,12 +26,37 @@ def read_json(path):
         return json.load(file)
 
 
+def list_dir(path):
+    """List All Item In Directory
+    Args:
+        path(list):
+    Return:
+        list : All Item in Directory
+    """
+    return os.listdir(r"{}".format(resolve_path(path)))
+
+
+def check_extension(mod, extension):
+    """Check if List file have specific Extension.
+    Args:
+        mod(str):
+        extension(str):
+    Return:
+        list : All Item That Match Condition
+    """
+    file_list = []
+    for file in file_list:
+        if mod in file and extension in file:
+            file_list.append(file)
+    return file_list
+
+
 def write_json(data, path):
     # Serializing json
     json_object = json.dumps(data, indent=4)
 
     # Writing to sample.json
-    file = open("sample.json", "w")
+    file = open(path, "w")
     file.write(json_object)
 
     file.close()
@@ -65,4 +89,13 @@ def get_current_file_name():
         raw_name, extension = os.path.splitext(filename)
         return raw_name, extension
     else:
-        raise TypeError("File is unsave")
+        raise TypeError("File is untitled")
+
+
+def get_current_file_folder():
+    filepath = mc.file(q=True, sn=True)
+    if filepath:
+        filename = os.path.basename(filepath)
+        return filepath.replace(filename, "")
+    else:
+        raise TypeError("File is untitled")

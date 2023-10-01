@@ -22,10 +22,11 @@ def deconstruct(object_name):
         return False
 
 
-def construct(name, index, side, style):
+def construct(name, index, side, _type):
     name_list = []
-    for compo in [name, index, side, style]:
+    for compo in [name, index, side, _type]:
         if compo:
             name_list.append(str(compo))
 
     return "_".join(name_list)
+

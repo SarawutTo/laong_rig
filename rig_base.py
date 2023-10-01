@@ -1,5 +1,5 @@
 import core
-import naming_tools as namet
+import naming_tools as naming
 
 
 class Rigbase(object):
@@ -7,9 +7,17 @@ class Rigbase(object):
         self.mod = mod
         self.desc = desc
 
-    def init_dag(self, dag, name, index, side, kind):
+    def _init_dag(self, dag, name, index, side, _type):
         rigname = "{}{}Rig".format(name, self.mod, self.desc)
-        dag_name = namet.construct(rigname, index, side, kind)
+        dag_name = naming.construct(rigname, index, side, _type)
+        try:
+            dag.name = dag_name
+        except:
+            raise TypeError("{} is not from Almond".format(dag))
+
+    def _init_node(self, dag, name, index, side, _type):
+        rigname = "{}{}Rig".format(name, self.mod, self.desc)
+        dag_name = naming.construct(rigname, index, side, _type)
         try:
             dag.name = dag_name
         except:
@@ -28,3 +36,6 @@ class Rigbase(object):
         if still_par:
             still.set_parent(still_par)
         return still.name
+
+    def _create_controller_w_ofst():
+        pass

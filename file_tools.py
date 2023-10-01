@@ -3,6 +3,7 @@ import sys
 from imp import reload
 from . import system_os as sos
 import maya.cmds as mc
+import re
 
 reload(sos)
 
@@ -13,6 +14,7 @@ def _init_cwd(cwd=""):
 
     rig_data = os.path.join(cwd, "rig_data")
     hero = os.path.join(cwd, "hero")
+    version = os.path.join(cwd, "version")
     wip = os.path.join(cwd, "wip")
     python = os.path.join(rig_data, "python")
     backup = os.path.join(rig_data, "backup")
@@ -20,20 +22,60 @@ def _init_cwd(cwd=""):
     weight = os.path.join(rig_data, "weight")
     ctrl = os.path.join(rig_data, "ctrl")
 
-    for path in [rig_data, python, blend, weight, ctrl, hero, backup, wip]:
-        if not os.path.exists(path):
-            os.mkdir(path)
-    print("initialize Path : {}".format(cwd))
+    for path in [
+        rig_data,
+        python,
+        version,
+        blend,
+        weight,
+        ctrl,
+        hero,
+        backup,
+        wip,
+    ]:
+        resolve = sos.resolve_path(path)
+        if not os.path.exists(resolve):
+            os.mkdir(resolve)
+    print("# Finish initialize Path -- {}/".format(sos.resolve_path(cwd)))
+
+
+def get_lasted_version(file_list):
+    """Get Lastest Version File in List.
+    Args:
+        file_list(list):
+    Return:
+        str : file name
+    """
+    versions = [
+        int(re.findall(r"_v(\d+)", filename)[0])
+        if re.findall(r"_v(\d+)", filename)
+        else 0
+        for filename in file_list
+    ]
+
+    return file_list[versions.index(max(versions))]
 
 
 def open_last(mod, cwd):
-    filepath = sos.resolve_path(os.path.join(cwd, "{}.ma".format(mod)))
+    """ """
+    file_list = sos.list_dir(os.path.join(cwd, "version"))
+
+    # Get File Name
+    ma_files = []
+    for file in file_list:
+        if mod in file and ".ma" in file:
+            ma_files.append(file)
+
+    lastest_file = get_lasted_version(ma_files)
+    file_path = sos.resolve_path(os.path.join(cwd, "version", lastest_file))
+
     modified_check = check_modified_choice()
     if modified_check == "Save":
         mc.file(s=True)
-        mc.file(filepath, o=True)
+        mc.file(file_path, o=True)
+        print("Open {}".format(file_path))
     elif modified_check == "Don't Save":
-        mc.file(filepath, o=True, f=True)
+        mc.file(file_path, o=True, f=True)
     else:
         pass
 
@@ -65,3 +107,4 @@ def rig_current():
     exec(import_py)
     exec(reload_py)
     exec(run_function)
+

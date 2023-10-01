@@ -1,8 +1,11 @@
+from imp import reload
 import maya.cmds as mc
 import maya.OpenMaya as om
 from . import rig_global as glb
 
 reload(glb)
+
+cp = glb.Cp
 
 
 class Attribute(object):
@@ -120,6 +123,11 @@ class Null(Dag):
         null = mc.createNode("transform")
         super(Null, self).__init__(null)
 
+class Group(Dag):
+    def __init__(self, child):
+        grp = mc.group(child)
+        super(Group, self).__init__(grp)
+
 
 class Joint(Dag):
     def __init__(self, style=None):
@@ -134,21 +142,53 @@ class Surface(Dag):
     def __init__(self, name):
         super(Surface, self).__init__(name)
 
-    def get_point_on_uv(self, u_param, v_param, space=glb.MSpace.world):
+    def get_point_on_sfc(self, param_u, param_v, space=glb.MSpace.world):
+        """Get Point from Surface U V
+        Args:
+            u_param(int/float):
+            v_param(int/float):
+            space(Mspace):
+
+        Return:
+            point: MPoint
+        """
         mfn_surface = om.MFnNurbsSurface(self.m_dagpath)
         point = om.MPoint()
-        mfn_surface.getPointAtParam(u_param, v_param, point, space)
+        mfn_surface.getPointAtParam(param_u, param_v, point, space)
+
         return point
 
-    def get_pnuv_on_uv(self, u_param, v_param, space=glb.MSpace.world):
+    def get_pnuv_on_sfc(self, param_u, param_v, space=glb.MSpace.world):
+        """Get Point Normal TangentU TangentV from Surface U V
+        Args:
+            u_param(int/float):
+            v_param(int/float):
+            space(Mspace):
+
+        Return:
+            point: MPoint
+            normal: MVector
+            tangent_u: MVector
+            tangent_v: MVector
+        """
         mfn_surface = om.MFnNurbsSurface(self.m_dagpath)
         point = om.MPoint()
-        mfn_surface.getPointAtParam(u_param, v_param, point, space)
-        normal = mfn_surface.normal(u_param, v_param)
+        mfn_surface.getPointAtParam(param_u, param_v, point, space)
+        normal = mfn_surface.normal(param_u, param_v)
         tangent_u = om.MVector()
         tangent_v = om.MVector()
-        mfn_surface.getTangents(u_param, v_param, tangent_u, tangent_v)
+        mfn_surface.getTangents(param_u, param_v, tangent_u, tangent_v)
+
         return point, normal, tangent_u, tangent_v
+
+
+class Controller(Dag):
+    def __init__(self, cp):
+        if cp == "nurbCircle":
+            mc.circle(n="Controller")
+        else:
+            curve = mc.curve(d=1, p=cp, n="Controller")
+        super(Controller, self).__init__(curve)
 
 
 class Node(Core):
@@ -161,9 +201,8 @@ def create_node(*args, **kwargs):
     return Node(*args, **kwargs)
 
 
-def create_joint(*args, **kwargs):
-    return Joint(*args, **kwargs)
-
-
 def create_null(*args, **kwargs):
     return Null(*args, **kwargs)
+
+
+def group():

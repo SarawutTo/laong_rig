@@ -37,3 +37,14 @@ def check_ref_diff(in_scene, ref_file):
 
 def dup_delete_orig():
     pass
+
+
+def get_ctrl_shape_as_list():
+    sels = mc.ls(sl=True, fl=True)
+    cp_list = []
+    for each in sels:
+        vtx_pos = tuple(
+            [round(i, 4) for i in mc.xform(each, q=True, t=True, ws=True)]
+        )
+
+        cp_list.append(vtx_pos)
