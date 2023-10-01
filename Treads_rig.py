@@ -20,7 +20,7 @@ def treads_rig(curve, object, capacity ,circle=True):
 
     path = mc.pathAnimation('pCube1',curve = 'curve1')
     mc.delete(mc.listConnections(path)[0])
-    mc.setAttr('{path}.u'i*result)
+    # mc.setAttr('{path}.u'i*result)
 
 def change_naming(object):
     sels = mc.ls(object)
