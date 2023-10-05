@@ -13,15 +13,19 @@ class Rigbase(object):
         try:
             dag.name = dag_name
         except:
-            raise TypeError("{} is not from Almond".format(dag))
+            raise TypeError("{} is not from Core".format(dag))
 
-    def _init_node(self, dag, name, index, side, _type):
+        return dag
+
+    def _init_node(self, node, name, index, side, _type):
         rigname = "{}{}Rig".format(name, self.mod, self.desc)
-        dag_name = naming.construct(rigname, index, side, _type)
+        node_name = naming.construct(rigname, index, side, _type)
         try:
-            dag.name = dag_name
+            node.name = node_name
         except:
-            raise TypeError("{} is not from Almond".format(dag))
+            raise TypeError("{} is not from Core".format(node))
+
+        return node
 
     def create_meta(self, meta_par=None):
         meta = core.create_null()
@@ -37,5 +41,25 @@ class Rigbase(object):
             still.set_parent(still_par)
         return still.name
 
-    def _create_controller_w_ofst():
-        pass
+    def _init_quad_grp(self, child, name, index, side):
+        """Create Zr Extra Offset Group On Top of Childe Object
+        Args:
+            child(str):
+            name(str):
+            index(int):
+            side('L'/'R'):
+        Return:
+            Loc.Dag : Zr Group
+            Loc.Dag : Extra Group
+            Loc.Dag : Offset Group
+        """
+        rigname = "{}{}Rig".format(name, self.mod, self.desc)
+        ofst = core.Group(child)
+        ex = core.Group(ofst)
+        zr = core.Group(ex)
+
+        ofst.name = naming.construct(rigname, index, side, "Ofst")
+        ex.name = naming.construct(rigname, index, side, "Ex")
+        zr.name = naming.construct(rigname, index, side, "Zr")
+
+        return zr, ex, ofst

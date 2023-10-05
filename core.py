@@ -55,7 +55,10 @@ class Dag(Core):
     def __init__(self, name):
         super(Dag, self).__init__(name)
         sel_list = om.MSelectionList()
-        sel_list.add(name)
+        try:
+            sel_list.add(name)
+        except:
+            raise mc.error("{} Doesn't Exist".format(name))
 
         self.m_obj = om.MObject()
         self.m_dagpath = om.MDagPath()
@@ -93,6 +96,19 @@ class Dag(Core):
     def set_world(self):
         mc.parent(self.name, w=True)
 
+    # Space
+    def snap(self, to_this):
+        mc.matchTransform(self.name, to_this)
+
+    def snap_pos(self, to_this):
+        mc.matchTransform(self.name, to_this, pos=True)
+
+    def snap_rot(self, to_this):
+        mc.matchTransform(self.name, to_this, rot=True)
+
+    def snap_scl(self, to_this):
+        mc.matchTransform(self.name, to_this, scl=True)
+
     @property
     def hide(self):
         value = self.attr("v").v
@@ -122,6 +138,7 @@ class Null(Dag):
     def __init__(self):
         null = mc.createNode("transform")
         super(Null, self).__init__(null)
+
 
 class Group(Dag):
     def __init__(self, child):
@@ -185,7 +202,7 @@ class Surface(Dag):
 class Controller(Dag):
     def __init__(self, cp):
         if cp == "nurbCircle":
-            mc.circle(n="Controller")
+            curve = mc.circle(n="Controller", ch=False)[0]
         else:
             curve = mc.curve(d=1, p=cp, n="Controller")
         super(Controller, self).__init__(curve)
@@ -197,6 +214,10 @@ class Node(Core):
         super(Node, self).__init__(node)
 
 
+def cast_dags(object_list):
+    return [Dag(obj) for obj in object_list]
+
+
 def create_node(*args, **kwargs):
     return Node(*args, **kwargs)
 
@@ -205,4 +226,5 @@ def create_null(*args, **kwargs):
     return Null(*args, **kwargs)
 
 
-def group():
+def parent_constraint(*args, **kwargs):
+    return mc.parentConstraint(*args, **kwargs)

@@ -77,7 +77,7 @@ def open_last(mod, cwd):
     elif modified_check == "Don't Save":
         mc.file(file_path, o=True, f=True)
     else:
-        pass
+        mc.file(file_path, o=True, f=True)
 
 
 def check_modified_choice():
@@ -98,13 +98,14 @@ def check_modified_choice():
 
 def rig_current():
     name, _ = sos.get_current_file_name()
+    py_name = name.split("_")[0]
     path = sos.get_cwd_python()
-    import_py = "import {}".format(name)
-    reload_py = "reload({})".format(name)
-    run_function = "{}.main()".format(name)
+    import_py = "import {}".format(py_name)
+    reload_py = "reload({})".format(py_name)
+    run_function = "{}.main()".format(py_name)
+
     if not path in sys.path:
         sys.path.append(path)
     exec(import_py)
     exec(reload_py)
     exec(run_function)
-

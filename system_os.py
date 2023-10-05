@@ -63,23 +63,23 @@ def write_json(data, path):
 
 
 def get_cwd_rigdata():
-    return os.path.join(get_cwd(), "rig_data")
+    return os.path.join(os.path.dirname(get_cwd()), "rig_data")
 
 
 def get_cwd_python():
-    return os.path.join(get_cwd(), "rig_data", "python")
+    return os.path.join(os.path.dirname(get_cwd()), "rig_data", "python")
 
 
 def get_cwd_ctrl():
-    return os.path.join(get_cwd(), "rig_data", "ctrl")
+    return os.path.join(os.path.dirname(get_cwd()), "rig_data", "ctrl")
 
 
 def get_cwd_weight():
-    return os.path.join(get_cwd(), "rig_data", "weight")
+    return os.path.join(os.path.dirname(get_cwd()), "rig_data", "weight")
 
 
 def get_cwd_blend():
-    return os.path.join(get_cwd(), "rig_data", "blend")
+    return os.path.join(os.path.dirname(get_cwd()), "rig_data", "blend")
 
 
 def get_current_file_name():

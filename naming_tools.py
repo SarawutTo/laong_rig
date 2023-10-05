@@ -1,10 +1,15 @@
+from imp import reload
 import maya.cmds as mc
 from . import core
 
+reload(core)
 
-def deconstruct(object_name):
-    obj_name = core.Dag(object_name).name
-    compo = obj_name.split("_")
+
+def deconstruct(obj_name):
+    try:
+        compo = obj_name.split("_")
+    except:
+        return TypeError("Cant Split Name")
 
     if len(compo) == 2:
         return compo[0], None, None, compo[1]
@@ -29,4 +34,3 @@ def construct(name, index, side, _type):
             name_list.append(str(compo))
 
     return "_".join(name_list)
-
