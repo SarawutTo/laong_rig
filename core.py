@@ -10,22 +10,30 @@ cp = glb.Cp
 
 class Attribute(object):
     def __init__(self, node, attr):
-        self.__name = "{}.{}".format(node, attr)
+        self.__attr = "{}.{}".format(node, attr)
 
     def __str__(self):
-        return self.__name
+        return self.__attr
 
     @property
-    def name(self):
-        return self.__name
+    def attr(self):
+        return self.__attr
 
     @property
     def value(self):
-        return mc.getAttr(self.name)
+        return mc.getAttr(self.attr)
 
     @value.setter
     def value(self, new_value):
-        mc.setAttr(self.name, new_value)
+        mc.setAttr(self.attr, new_value)
+
+    @property
+    def text(self):
+        return mc.getAttr(self.attr)
+
+    @text.setter
+    def text(self, new_value):
+        mc.setAttr(self.attr, new_value, type="string")
 
     v = value
 
@@ -135,8 +143,11 @@ class Dag(Core):
 
 
 class Null(Dag):
-    def __init__(self):
-        null = mc.createNode("transform")
+    def __init__(self, n=None):
+        if n:
+            null = mc.createNode("transform", n=n)
+        else:
+            null = mc.createNode("transform")
         super(Null, self).__init__(null)
 
 
@@ -153,6 +164,12 @@ class Joint(Dag):
         self.attr("radius").v = glb.GlobalAttr.radius
         if style:
             self.attr("drawStyle").v = 2
+
+
+class Meta(Dag):
+    def __init__(self, name=None):
+        meta_grp = mc.createNode("transform", n=name)
+        super(Meta, self).__init__(meta_grp)
 
 
 class Surface(Dag):
@@ -200,12 +217,21 @@ class Surface(Dag):
 
 
 class Controller(Dag):
-    def __init__(self, cp):
+    def __init__(self, cp, n=None):
+        if not n:
+            n = "Controller"
         if cp == "nurbCircle":
-            curve = mc.circle(n="Controller", ch=False)[0]
+            curve = mc.circle(name=n, ch=False)[0]
         else:
-            curve = mc.curve(d=1, p=cp, n="Controller")
+            curve = mc.curve(d=1, p=cp, name=n)
         super(Controller, self).__init__(curve)
+
+    def scale_shape(self, scalev):
+        getpivot = mc.xform(self.name, q=True, ws=True, t=True)
+        compo = mc.ls("{}.cv[*]".format(self.name), fl=True)
+        mc.select(compo)
+        mc.scale(scalev, scalev, scalev, p=getpivot, r=True)
+        mc.select(cl=True)
 
 
 class Node(Core):

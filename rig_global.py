@@ -18,8 +18,9 @@ class MSpace(object):
     obj = 2
     world = 4
 
+
 class Cp(object):
-    n_circle = 'nurbCircle'
+    n_circle = "nurbCircle"
     triangle = [(-1.04, 0, 0.6), (1.04, 0, 0.6), (0, 0, -1.2), (-1.04, 0, 0.6)]
     square = [(1, 0, -1), (-1, 0, -1), (-1, 0, 1), (1, 0, 1), (1, 0, -1)]
     pyramid = [
