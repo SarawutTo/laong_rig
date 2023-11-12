@@ -1,3 +1,4 @@
+from imp import reload
 import core
 import naming_tools as naming
 

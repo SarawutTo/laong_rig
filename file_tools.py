@@ -56,6 +56,28 @@ def get_lasted_version(file_list):
     return file_list[versions.index(max(versions))]
 
 
+def get_next_version(file_name):
+    """Get Lastest Version File in List.
+    Args:
+        file_name(list):
+    Return:
+        str : file name
+    """
+
+    match = re.findall(r"(.+)_v(\d+)", file_name)[0][1]
+
+    if match:
+        version_number = int(match)
+        new_version = version_number + 1
+        new_filename = re.sub(
+            r"_v\d+", "_v{:03d}".format(new_version), file_name
+        )
+
+        return new_filename
+    else:
+        return "{}_v001".format(file_name)
+
+
 def open_last(mod, cwd):
     """ """
     file_list = sos.list_dir(os.path.join(cwd, "version"))
@@ -78,6 +100,41 @@ def open_last(mod, cwd):
         mc.file(file_path, o=True, f=True)
     else:
         mc.file(file_path, o=True, f=True)
+
+
+def save_to(mod, cwd):
+    """Save to New Version.
+    Args:
+        file_name(list):
+    Return:
+        str : file name
+    """
+    file_list = sos.list_dir(os.path.join(cwd, "version"))
+
+    # Get File Name
+    ma_files = []
+    for file in file_list:
+        if mod in file and ".ma" in file:
+            ma_files.append(file)
+
+    if ma_files:
+        print(get_lasted_version(ma_files))
+        print(get_next_version(get_lasted_version(ma_files)))
+    else:
+        print(
+            sos.resolve_path(
+                os.path.join(cwd, "version", "{}_v001".format(mod))
+            )
+        )
+
+
+def save_next(mod, cwd):
+    """Save to Next Version if Not will use Save to instead.
+    Args:
+        file_name(list):
+    Return:
+        str : file name
+    """
 
 
 def check_modified_choice():

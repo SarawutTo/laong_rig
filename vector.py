@@ -105,3 +105,63 @@ def aim_by_vec(obj, up_posi, aim_posi):
 # mc.hide(A_cluster, B_cluster)
 # mc.parent(A_cluster,A)
 # mc.parent(B_cluster,B)
+
+import maya.cmds as mc
+import maya.OpenMaya as om
+import math
+
+
+def get_object_ws_trs(obj):
+    """Get Object world space trs value.
+
+    Args:
+        obj(str): Object name.
+
+    Return:
+        trans_value(tuple):
+        rotate_value(tuple):
+        scale_value(tuple):
+    """
+
+    trans_value = mc.xform(obj, q=True, ws=True, t=True)
+    obj_mtx = mc.xform(obj, q=True, ws=True, m=True)
+    mmtx = om.MMatrix()
+    om.MScriptUtil.createMatrixFromList(obj_mtx, mmtx)
+    xform_mtx = om.MTransformationMatrix(mmtx)
+
+    euler_rot = xform_mtx.eulerRotation()
+    rotate_value = (
+        math.degrees(euler_rot.x),
+        math.degrees(euler_rot.y),
+        math.degrees(euler_rot.z),
+    )
+
+    x_vec = om.MVector(obj_mtx[0], obj_mtx[1], obj_mtx[2])
+    y_vec = om.MVector(obj_mtx[4], obj_mtx[5], obj_mtx[6])
+    z_vec = om.MVector(obj_mtx[8], obj_mtx[9], obj_mtx[10])
+
+    scale_value = (x_vec.length(), y_vec.length(), z_vec.length())
+
+    return trans_value, rotate_value, scale_value
+
+
+def decompose_matrix(matrix):
+    mmtx = om.MMatrix()
+    om.MScriptUtil.createMatrixFromList(matrix, mmtx)
+    xform_mtx = om.MTransformationMatrix(mmtx)
+
+    euler_rot = xform_mtx.eulerRotation()
+
+    x_vec = om.MVector(matrix[0], matrix[1], matrix[2])
+    y_vec = om.MVector(matrix[4], matrix[5], matrix[6])
+    z_vec = om.MVector(matrix[8], matrix[9], matrix[10])
+
+    translate_value = (matrix[12], matrix[13], matrix[14])
+    rotate_value = (
+        math.degrees(euler_rot.x),
+        math.degrees(euler_rot.y),
+        math.degrees(euler_rot.z),
+    )
+    scale_value = (x_vec.length(), y_vec.length(), z_vec.length())
+
+    return translate_value, rotate_value, scale_value
