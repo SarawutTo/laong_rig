@@ -103,7 +103,7 @@ def open_last(mod, cwd):
 
 
 def save_to(mod, cwd):
-    """Save to New Version.
+    """Save to New File if old version already exist use save next instead.
     Args:
         file_name(list):
     Return:
@@ -118,23 +118,35 @@ def save_to(mod, cwd):
             ma_files.append(file)
 
     if ma_files:
-        print(get_lasted_version(ma_files))
-        print(get_next_version(get_lasted_version(ma_files)))
-    else:
-        print(
-            sos.resolve_path(
-                os.path.join(cwd, "version", "{}_v001".format(mod))
-            )
+        nextfile_path = sos.join_path(
+            cwd,
+            "version",
+            get_next_version(get_lasted_version(ma_files)),
         )
+        mc.file(rename=nextfile_path)
+        mc.file(s=True)
+        print("Save to {} //".format(nextfile_path))
+
+    else:
+        file_path = sos.join_path(cwd, "version", "{}_v001.ma".format(mod))
+        mc.file(rename=file_path)
+        mc.file(s=True)
+        print("Save to {} //".format(file_path))
 
 
-def save_next(mod, cwd):
-    """Save to Next Version if Not will use Save to instead.
-    Args:
-        file_name(list):
-    Return:
-        str : file name
-    """
+def save_next():
+    """Save to Next Version."""
+    cwd = sos.get_cwd()
+    _, filename, _, _ = sos.get_current_path_data()
+    nextfile_path = sos.join_path(
+        cwd,
+        get_next_version(filename),
+    )
+
+    mc.file(rename=nextfile_path)
+    mc.file(s=True)
+
+    print("Save to {} //".format(nextfile_path))
 
 
 def check_modified_choice():

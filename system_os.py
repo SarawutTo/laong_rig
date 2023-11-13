@@ -13,7 +13,29 @@ def get_cwd():
     return cwd.replace("/", "\\")
 
 
+def get_current_path_data():
+    """Get Current File Path Data.
+
+    Args:
+        None
+    Returns:
+        filepath(str): Full File Path.
+        filename(str): FileName with Extension.
+        raw_name(str): Raw FileName.
+        extension(str): Extension.
+    """
+    filepath = mc.file(q=True, sn=True)
+    filename = os.path.basename(filepath)
+    raw_name, extension = os.path.splitext(filename)
+
+    return filepath, filename, raw_name, extension
+
+
 def resolve_path(path):
+    """Resolve Path
+    Args:
+        path(str):
+    """
     parent_replace = ["\t", "\n", "\r", "\f", "\v", "\a", "\b", "\000", "\\"]
     child_replace = ["/t", "/n", "/r", "/f", "/v", "/a", "/b", "/000", "/"]
     for i in range(len(parent_replace)):
@@ -24,6 +46,10 @@ def resolve_path(path):
 def read_json(path):
     with open(path) as file:
         return json.load(file)
+
+
+def join_path(*arg, **kwargs):
+    return resolve_path(os.path.join(*arg, **kwargs))
 
 
 def list_dir(path):
