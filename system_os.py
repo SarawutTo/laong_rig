@@ -1,16 +1,30 @@
+# Import System Modules.
 import os
-import sys
+import re
 import json
 import maya.cmds as mc
 
 
+# Get Cwd Data
 def get_cwd():
-    filepath = mc.file(q=True, sn=True)
-    if not filepath:
+    """Get Current Maya Working Directory."""
+    file_path = mc.file(q=True, sn=True)
+    if not file_path:
         raise ValueError("No Path Detect")
+
     # Get Path For window
-    cwd = os.path.dirname(filepath)
+    cwd = os.path.dirname(file_path)
     return cwd.replace("/", "\\")
+
+
+def back_one_dir(absolute_path):
+    """Go Back One Directory.
+    Args:
+        absolute_path(path)
+    """
+    directory = os.path.dirname(absolute_path)
+
+    return directory
 
 
 def get_current_path_data():
@@ -24,11 +38,12 @@ def get_current_path_data():
         raw_name(str): Raw FileName.
         extension(str): Extension.
     """
-    filepath = mc.file(q=True, sn=True)
-    filename = os.path.basename(filepath)
-    raw_name, extension = os.path.splitext(filename)
+    full_path = mc.file(q=True, sn=True)
+    path = os.path.dirname(full_path)
+    file_name = os.path.basename(full_path)
+    raw_name, extension = os.path.splitext(file_name)
 
-    return filepath, filename, raw_name, extension
+    return full_path, path, file_name, raw_name, extension
 
 
 def resolve_path(path):
@@ -43,12 +58,8 @@ def resolve_path(path):
     return path
 
 
-def read_json(path):
-    with open(path) as file:
-        return json.load(file)
-
-
 def join_path(*arg, **kwargs):
+    """Function Like os.joint but resolve path for window."""
     return resolve_path(os.path.join(*arg, **kwargs))
 
 
@@ -108,20 +119,12 @@ def get_cwd_blend():
     return os.path.join(os.path.dirname(get_cwd()), "rig_data", "blend")
 
 
-def get_current_file_name():
-    filepath = mc.file(q=True, sn=True)
-    if filepath:
-        filename = os.path.basename(filepath)
-        raw_name, extension = os.path.splitext(filename)
-        return raw_name, extension
-    else:
-        raise TypeError("File is untitled")
+def get_hero_name(filename):
+    hero_name = "{}.ma".format(re.findall("(\w+)(_)", filename)[0][0])
+
+    return hero_name
 
 
-def get_current_file_folder():
-    filepath = mc.file(q=True, sn=True)
-    if filepath:
-        filename = os.path.basename(filepath)
-        return filepath.replace(filename, "")
-    else:
-        raise TypeError("File is untitled")
+def read_json(path):
+    with open(path) as file:
+        return json.load(file)

@@ -1,14 +1,22 @@
+# Import System Modules.
+import re
 import os
 import sys
 from imp import reload
-from . import system_os as sos
+
+# Import Modules.
 import maya.cmds as mc
-import re
+from . import system_os as sos
 
 reload(sos)
 
 
 def _init_cwd(cwd=""):
+    """Initilize woking directory
+
+    Args:
+        cwd(path): Working Directory.
+    """
     if not cwd:
         cwd = sos.get_cwd()
 
@@ -42,7 +50,7 @@ def _init_cwd(cwd=""):
 def get_lasted_version(file_list):
     """Get Lastest Version File in List.
     Args:
-        file_list(list):
+        file_list(list): list of file name.
     Return:
         str : file name
     """
@@ -79,7 +87,12 @@ def get_next_version(file_name):
 
 
 def open_last(mod, cwd):
-    """ """
+    """Open Last Module Last File.
+    Args:
+        mod(str):
+        cwd(path):
+
+    """
     file_list = sos.list_dir(os.path.join(cwd, "version"))
 
     # Get File Name
@@ -89,7 +102,7 @@ def open_last(mod, cwd):
             ma_files.append(file)
 
     lastest_file = get_lasted_version(ma_files)
-    file_path = sos.resolve_path(os.path.join(cwd, "version", lastest_file))
+    file_path = sos.join_path(cwd, "version", lastest_file)
 
     modified_check = check_modified_choice()
     if modified_check == "Save":
@@ -137,7 +150,7 @@ def save_to(mod, cwd):
 def save_next():
     """Save to Next Version."""
     cwd = sos.get_cwd()
-    _, filename, _, _ = sos.get_current_path_data()
+    _, _, filename, _, _ = sos.get_current_path_data()
     nextfile_path = sos.join_path(
         cwd,
         get_next_version(filename),
@@ -150,6 +163,13 @@ def save_next():
 
 
 def check_modified_choice():
+    """Check Modified Choice.
+    Args:
+        None
+
+    Return:
+        Bool : result True/False
+    """
     if mc.file(q=True, modified=True):
         result = mc.confirmDialog(
             title="Unsaved Changes",
@@ -166,7 +186,12 @@ def check_modified_choice():
 
 
 def rig_current():
-    name, _ = sos.get_current_file_name()
+    """Check Modified Choice.
+
+    Return:
+        Bool : result True/False
+    """
+    _, _, _, name, _ = sos.get_current_path_data()
     py_name = name.split("_")[0]
     path = sos.get_cwd_python()
     import_py = "import {}".format(py_name)
@@ -178,3 +203,14 @@ def rig_current():
     exec(import_py)
     exec(reload_py)
     exec(run_function)
+
+
+def rig_and_hero():
+    """Rig and Hero."""
+    rig_current()
+    _, path, filename, _, _ = sos.get_current_path_data()
+    rig_path = sos.back_one_dir(path)
+    hero_path = sos.join_path(rig_path, "hero", sos.get_hero_name(filename))
+
+    mc.file(rename=hero_path)
+    mc.file(s=True)
