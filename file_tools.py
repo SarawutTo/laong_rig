@@ -198,6 +198,9 @@ def rig_current():
     reload_py = "reload({})".format(py_name)
     run_function = "{}.main()".format(py_name)
 
+    py_fullpath = sos.join_path(path, "{}.py".format(py_name))
+    if not os.path.exists(py_fullpath):
+        raise ValueError("# This File Does Not Exist {} ".format(py_fullpath))
     if not path in sys.path:
         sys.path.append(path)
     exec(import_py)
@@ -214,3 +217,20 @@ def rig_and_hero():
 
     mc.file(rename=hero_path)
     mc.file(s=True)
+
+
+def write_ctrl_shape():
+    ctrls = mc.ls("*Ctrl")
+    print(ctrls)
+
+
+def open_hero(mod, cwd):
+    pass
+
+
+def ref_hero(mod, cwd):
+    pass
+
+
+def hero_this():
+    pass

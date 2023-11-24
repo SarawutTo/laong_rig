@@ -117,6 +117,15 @@ class Dag(Core):
     def snap_scl(self, to_this):
         mc.matchTransform(self.name, to_this, scl=True)
 
+    def set_pos(self, to_this):
+        mc.xform(self.name, t=(to_this))
+
+    def set_rot(self, to_this):
+        mc.xform(self.name, r=(to_this))
+
+    def set_scl(self, to_this):
+        mc.xform(self.name, s=(to_this))
+
     @property
     def hide(self):
         value = self.attr("v").v
@@ -214,6 +223,26 @@ class Surface(Dag):
         mfn_surface.getTangents(param_u, param_v, tangent_u, tangent_v)
 
         return point, normal, tangent_u, tangent_v
+
+
+class Curve(Dag):
+    def __init__(self, name):
+        super(Curve, self).__init__(name)
+
+    def get_point_at_param(self, param, space=glb.MSpace.world):
+        """Get Point from Curve Param
+        Args:
+            param(int/float):
+            space(Mspace):
+
+        Return:
+            point: MPoint
+        """
+        mfn_crv = om.MFnNurbsCurve(self.m_dagpath)
+        point = om.MPoint()
+        mfn_crv.getPointAtParam(param, point, space)
+
+        return point
 
 
 class Controller(Dag):

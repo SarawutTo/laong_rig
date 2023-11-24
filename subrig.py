@@ -28,7 +28,7 @@ class PointRig(rig_base.Rigbase):
             loc.Controller(loc.cp.n_circle), "", idx, side, "Ctrl"
         )
         self.jnt = self._init_dag(loc.Joint(), "", idx, side, "Jnt")
-        self.zr, self.ofst = self._init_tri_grp(self.ctrl, "", idx, side)
+        self.zr, self.ofst = self._init_duo_grp(self.ctrl, "", idx, side)
         loc.parent_constraint(self.ctrl, self.jnt)
         self.zr.snap(tmp_jnt)
         self.zr.set_parent(self.meta)
@@ -64,7 +64,7 @@ class FkRig(rig_base.Rigbase):
                 loc.Controller(loc.cp.n_circle), name, idx, side, "Ctrl"
             )
             jnt = self._init_dag(loc.Joint(), name, idx, side, "Jnt")
-            zr, ofst = self._init_tri_grp(ctrl, name, idx, side)
+            zr, ofst = self._init_duo_grp(ctrl, name, idx, side)
             loc.parent_constraint(ctrl, jnt)
             zr.snap(tmp_jnt)
 

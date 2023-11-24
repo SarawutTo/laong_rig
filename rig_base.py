@@ -66,7 +66,7 @@ class Rigbase(object):
             still.set_parent(still_par)
         return still
 
-    def _init_quad_grp(self, child, name, index, side):
+    def _init_tri_grp(self, child, name, index, side):
         """Create Zr Extra Offset Group On Top of Childe Object
         Args:
             child(str):
@@ -89,7 +89,7 @@ class Rigbase(object):
 
         return zr, ex, ofst
 
-    def _init_tri_grp(self, child, name, index, side):
+    def _init_duo_grp(self, child, name, index, side):
         """Create Zr Offset Group On Top of Childe Object
         Args:
             child(str):
