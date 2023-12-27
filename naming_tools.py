@@ -1,15 +1,17 @@
 from imp import reload
-import maya.cmds as mc
 from . import core
 
 reload(core)
 
 
 def deconstruct(obj_name):
+    if isinstance(obj_name, core.Core):
+        obj_name = obj_name.name
+
     try:
         compo = obj_name.split("_")
     except:
-        return TypeError("Cant Split Name")
+        return TypeError("Cant Split Name Object is {}".format(type(obj_name)))
 
     if len(compo) == 2:
         return compo[0], None, None, compo[1]
@@ -34,3 +36,19 @@ def construct(name, index, side, _type):
             name_list.append(str(compo))
 
     return "_".join(name_list)
+
+
+def upfirst(name):
+    letter_count = len(str(name))
+    if letter_count == 1:
+        return name.upper()
+    else:
+        return name[0].upper() + name[1:]
+
+
+def lowfirst(name):
+    letter_count = len(str(name))
+    if letter_count == 1:
+        return name.lower()
+    else:
+        return name[0].lower() + name[1:]

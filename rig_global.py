@@ -1,4 +1,7 @@
-JOINT_RADIUS = 2
+from dataclasses import dataclass
+
+
+JOINT_RADIUS = 1
 CTRL_SCALE = 1
 
 # Naming Tools
@@ -7,11 +10,55 @@ INDEX = 1
 SIDE = 2
 KIND = 3
 
+# Main Group
+RIG_GRP = "Rig_Grp"
+JOINT_GRP = "Joint_Grp"
+STILL_GRP = "Still_Grp"
+DELETE_GRP = "Delete_Grp"
+CONTROL_GRP = "Control_Grp"
+WORLDSPACE_GRP = "WorldSpace_Grp"
+# Main Ctrl
+OFFSET_CTRL = "Offest_Ctrl"
+GLOBAL_CTRL = "Global_Ctrl"
+# Skin Set
+SKIN_SET = "Skin_Jnt"
+
 
 class GlobalAttr(object):
     # World Scale
     radius = JOINT_RADIUS
     ctrl_scale = CTRL_SCALE
+
+
+class MainGroup(object):
+    # World Scale
+    rig_grp = RIG_GRP
+    skin_set = SKIN_SET
+    joint_grp = JOINT_GRP
+    still_grp = STILL_GRP
+    ctrl_grp = CONTROL_GRP
+    offset_grp = OFFSET_CTRL
+    global_ctrl = GLOBAL_CTRL
+    delete_grp = DELETE_GRP
+    worldspace_grp = WORLDSPACE_GRP
+
+
+class Color(object):
+    clear = 0
+    black = 1
+    grey = 3
+
+    yellow = 17
+    yellow_soft = 21
+    yellow_dark = 25
+
+    blue = 6
+    blue_soft = 18
+    blue_dark = 27
+
+    red = 13
+    red_soft = 20
+    red_dark = 31
 
 
 class MSpace(object):
@@ -152,6 +199,33 @@ class Cp(object):
         (-0.55, 0.0, 0.44),
         (-1.0, 0.0, 0.0),
     ]
+    offset_ctrl = [
+        (-0.7951, 0.0, 0.7951),
+        (-0.7872, 0.0, 0.0875),
+        (-0.6997, 0.0, 0.1749),
+        (-0.5248, 0.0, 0.0),
+        (-0.6997, 0.0, -0.1749),
+        (-0.7872, 0.0, -0.0875),
+        (-0.7951, 0.0, -0.7951),
+        (-0.0875, 0.0, -0.7872),
+        (-0.1749, 0.0, -0.6997),
+        (0.0, 0.0, -0.5248),
+        (0.1749, 0.0, -0.6997),
+        (0.0875, 0.0, -0.7872),
+        (0.7951, 0.0, -0.7951),
+        (0.7872, 0.0, -0.0875),
+        (0.6997, 0.0, -0.1749),
+        (0.5248, 0.0, 0.0),
+        (0.6997, 0.0, 0.1749),
+        (0.7872, 0.0, 0.0875),
+        (0.7951, 0.0, 0.7951),
+        (0.0875, 0.0, 0.7872),
+        (0.1749, 0.0, 0.6997),
+        (0.0, 0.0, 0.5248),
+        (-0.1749, 0.0, 0.6997),
+        (-0.0875, 0.0, 0.7872),
+        (-0.7951, 0.0, 0.7951),
+    ]
 
     plus = [
         (-0.4, 0.0, -0.4),
@@ -262,4 +336,20 @@ class Cp(object):
         (-4.0246, 0.0, -0.0),
         (-3.0105, 0.0, 1.014),
         (-1.9965, 0.0, 0.0),
+    ]
+    half_cy = [
+        (0.5572, 0.5432, -0.3136),
+        (0.5572, 0.3136, -0.5432),
+        (0.5572, -0.0, -0.6273),
+        (-0.5572, 0.0, -0.6273),
+        (-0.5572, 0.3136, -0.5432),
+        (-0.5572, 0.5432, -0.3136),
+        (-0.5572, 0.6273, 0.0),
+        (-0.5572, 0.5432, 0.3136),
+        (-0.5572, 0.3136, 0.5432),
+        (-0.5572, 0.0, 0.6273),
+        (0.5572, -0.0, 0.6273),
+        (0.5572, 0.3136, 0.5432),
+        (0.5572, 0.5432, 0.3136),
+        (0.5572, 0.6273, 0.0),
     ]

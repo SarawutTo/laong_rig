@@ -3,6 +3,11 @@ import math
 import maya.cmds as mc
 import maya.OpenMaya as om
 
+from . import core as loc
+
+### Formula Document ###
+# dot product = ((ax*bx)+(ay*by)+(az*bz)) * cosine
+
 
 def calculate_length(root_loc, end_loc):
     root_vec = om.MVector(*root_loc.world_pos)
@@ -165,3 +170,37 @@ def decompose_matrix(matrix):
     scale_value = (x_vec.length(), y_vec.length(), z_vec.length())
 
     return translate_value, rotate_value, scale_value
+
+
+def get_ik_pole_vector(root, mid, end, amp=15):
+    root_vec = loc.Dag(root).world_vec()
+    mid_vec = loc.Dag(mid).world_vec()
+    end_vec = loc.Dag(end).world_vec()
+
+    root_end = end_vec - root_vec
+    root_mid = mid_vec - root_vec
+
+    half_vector = projection_b_on_a(root_end, root_mid)
+    ofst_vec = (root_mid - half_vector) * amp
+    pole_vector = ofst_vec + half_vector + root_vec
+
+    return pole_vector
+
+
+def projection_b_on_a(vec_a, vec_b):
+    """Formula : b*a/a.length() * a.normalize()
+    Args:
+        vec_a(om.Mvector)
+        vec_b(om.Mvector)
+    Return:
+        result(om.Mvector)
+    """
+    new_vec_a = om.MVector(vec_a.x, vec_a.y, vec_a.z)
+
+    dot_prod = new_vec_a * vec_b
+    div_length = dot_prod / new_vec_a.length()
+
+    new_vec_a.normalize()
+    projection_vector = new_vec_a * div_length
+
+    return projection_vector

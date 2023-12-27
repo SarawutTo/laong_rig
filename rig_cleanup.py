@@ -4,12 +4,12 @@ import re
 import json
 import maya.cmds as mc
 
-DELETE_GRP = "Delete_Grp"
+from . import rig_global as rgb
 
 
 def clean_delete_grp():
-    if mc.objExists(DELETE_GRP):
-        mc.delete(DELETE_GRP)
+    if mc.objExists(rgb.MainGroup.delete_grp):
+        mc.delete(rgb.MainGroup.delete_grp)
 
 
 def clean_meta_data():

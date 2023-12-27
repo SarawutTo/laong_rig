@@ -14,18 +14,20 @@ class PointRig(rig_base.Rigbase):
         tmp_jnt,
         mod,
         desc="",
+        idx="",
+        side="",
+        shape=loc.cp.n_circle,
         ctrl_par=None,
         jnt_par=None,
     ):
-        super(PointRig, self).__init__(mod, desc)
+        super(PointRig, self).__init__(mod, desc, side)
         self.meta = self.create_meta(ctrl_par)
 
         # Cast
         tmp_jnt = loc.Dag(tmp_jnt)
 
-        _, idx, side, _ = lont.deconstruct(tmp_jnt)
         self.ctrl = self._init_dag(
-            loc.Controller(loc.cp.n_circle), "", idx, side, "Ctrl"
+            loc.Controller(shape), "", idx, side, "Ctrl"
         )
         self.jnt = self._init_dag(loc.Joint(), "", idx, side, "Jnt")
         self.zr, self.ofst = self._init_duo_grp(self.ctrl, "", idx, side)
@@ -59,6 +61,7 @@ class FkRig(rig_base.Rigbase):
         self.jnts = []
 
         for tmp_jnt, name in zip(tmp_jnts, jnt_name):
+            # Fix This use enumeate
             _, idx, side, _ = lont.deconstruct(tmp_jnt.name)
             ctrl = self._init_dag(
                 loc.Controller(loc.cp.n_circle), name, idx, side, "Ctrl"

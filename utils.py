@@ -1,4 +1,16 @@
+from imp import reload
+from . import core as loc
+from . import rig_base
+from . import naming_tools as lont
+from . import vector
+from . import rig_global as rgb
+from typing import Union
 import maya.cmds as mc
+
+reload(loc)
+reload(lont)
+reload(rig_base)
+reload(vector)
 
 
 def get_ws_center(object):
@@ -48,3 +60,68 @@ def get_ctrl_shape_as_list():
         )
 
         cp_list.append(vtx_pos)
+
+
+def create_space_switch(space_driver, space_driven, space_ctrl):
+    """ """
+
+    if isinstance(space_driver, dict):
+        a = [i for i in space_driver.values()]
+        b = [i for i in space_driver.keys()]
+
+        par = mc.parentConstraint(a, space_driven, mo=True)[0]
+        mc.addAttr(space_ctrl, ln="space", en=":".join(b), at="enum", k=True)
+        for ix, each in enumerate(space_driver):
+            con = mc.createNode(
+                "condition",
+                n="{}{}Space_Con".format(
+                    each, str(space_driven).split("_")[0]
+                ),
+            )
+            mc.setAttr("{}.st".format(con), ix)
+            mc.setAttr("{}.colorIfFalseR".format(con), 0)
+            mc.setAttr("{}.colorIfTrueR".format(con), 1)
+
+            mc.connectAttr("{}.space".format(space_ctrl), "{}.ft".format(con))
+            mc.connectAttr(
+                "{}.outColorR".format(con), "{}.w{}".format(par, ix)
+            )
+    else:
+        mc.parentConstraint(space_driver, space_driven, mo=True)
+
+
+def set_ctrls_color(
+    color: Union[None, rgb.Color],
+    mainctrl_list: list[loc.Controller],
+    subctrl_list: list[loc.Controller],
+    dtlctrl_list: list[loc.Controller],
+):
+    """Set Control Color
+    Args:
+        color(None, rgb.Color):
+        mainctrl_list():
+        subctrl_list():
+        dtlctrl_list():
+    """
+    for ctrl in mainctrl_list:
+        ctrl.set_ctrl_color(color, 0)
+    for ctrl in subctrl_list:
+        ctrl.set_ctrl_color(color, 1)
+    for ctrl in dtlctrl_list:
+        ctrl.set_ctrl_color(color, 2)
+
+
+def add_to_skin_set(jnt_list: list[loc.Joint]):
+    """Add Jnt to Skin_Set
+    Args:
+        jnt_list(None, rgb.Color):
+
+    """
+    set_name = rgb.MainGroup.skin_set
+
+    for jnt in jnt_list:
+        mc.sets(jnt, add=set_name)
+
+
+def connect_visiblity():
+    pass

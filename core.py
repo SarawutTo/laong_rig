@@ -1,11 +1,13 @@
 from imp import reload
 import maya.cmds as mc
 import maya.OpenMaya as om
-from . import rig_global as glb
+from . import rig_global as rgb
+from . import naming_tools as lont
 
-reload(glb)
+reload(rgb)
 
-cp = glb.Cp
+cp = rgb.Cp
+main_grp = rgb.MainGroup
 
 
 class Attribute(object):
@@ -14,6 +16,9 @@ class Attribute(object):
 
     def __str__(self):
         return self.__attr
+
+    def __rshift__(self, destination):
+        mc.connectAttr(self, destination, f=True)
 
     @property
     def attr(self):
@@ -34,6 +39,14 @@ class Attribute(object):
     @text.setter
     def text(self, new_value):
         mc.setAttr(self.attr, new_value, type="string")
+
+    @property
+    def lock(self):
+        return mc.getAttr(self.attr, q=True, l=True)
+
+    @lock.setter
+    def lock(self):
+        mc.setAttr(self.attr, l=True)
 
     v = value
 
@@ -63,10 +76,10 @@ class Dag(Core):
     def __init__(self, name):
         super(Dag, self).__init__(name)
         sel_list = om.MSelectionList()
-        try:
+        if isinstance(name, Dag):
+            sel_list.add(name.name)
+        else:
             sel_list.add(name)
-        except:
-            raise mc.error("{} Doesn't Exist".format(name))
 
         self.m_obj = om.MObject()
         self.m_dagpath = om.MDagPath()
@@ -80,7 +93,7 @@ class Dag(Core):
 
     def get_shape(self):
         try:
-            return mc.listRelatives(self.name, s=True)[0]
+            return Dag(mc.listRelatives(self.name, s=True)[0])
         except:
             raise TypeError("Check object type")
 
@@ -97,7 +110,7 @@ class Dag(Core):
     def get_children(self):
         return mc.listRelatives(self.name, c=True)
 
-    # Out-liner
+    # Outliner
     def set_parent(self, to_this, **kwargs):
         mc.parent(self.name, to_this, **kwargs)
 
@@ -126,6 +139,14 @@ class Dag(Core):
     def set_scl(self, to_this):
         mc.xform(self.name, s=(to_this))
 
+    def freeze(self):
+        mc.makeIdentity(self.name, a=True)
+
+    def world_vec(self):
+        world_pos = mc.xform(self.name, q=True, t=True, ws=True)
+        world_vec = om.MVector(*world_pos)
+        return world_vec
+
     @property
     def hide(self):
         value = self.attr("v").v
@@ -142,12 +163,22 @@ class Dag(Core):
             self.attr("v").v = 1
 
     # Chanel box
-    def lhattr(self, list_attr):
-        for attr in list_attr:
-            mc.setAttr(self.attr(attr), l=True, k=False)
+    def lhattr(self, *args):
+        for attr in args:
+            if attr in ["t", "r", "s"]:
+                attr_list = [
+                    "{}x".format(attr),
+                    "{}y".format(attr),
+                    "{}z".format(attr),
+                ]
+                for xyz_attr in attr_list:
+                    mc.setAttr(self.attr(xyz_attr), l=True, k=False, cb=False)
+
+            else:
+                mc.setAttr(self.attr(attr), l=True, k=False, cb=False)
 
     def add(self, ln, *args, **kwargs):
-        mc.addAttr(ln=ln, *args, **kwargs)
+        mc.addAttr(self.name, ln=ln, *args, **kwargs)
         return self.attr(ln)
 
 
@@ -167,12 +198,16 @@ class Group(Dag):
 
 
 class Joint(Dag):
-    def __init__(self, style=None):
+    def __init__(self, snap=None, style=None):
         jnt = mc.createNode("joint")
         super(Joint, self).__init__(jnt)
-        self.attr("radius").v = glb.GlobalAttr.radius
+        self.attr("radius").v = rgb.GlobalAttr.radius
+
+        if snap:
+            self.snap(snap)
+            self.freeze()
         if style:
-            self.attr("drawStyle").v = 2
+            self.attr("drawStyle").v = style
 
 
 class Meta(Dag):
@@ -185,7 +220,7 @@ class Surface(Dag):
     def __init__(self, name):
         super(Surface, self).__init__(name)
 
-    def get_point_on_sfc(self, param_u, param_v, space=glb.MSpace.world):
+    def get_point_on_sfc(self, param_u, param_v, space=rgb.MSpace.world):
         """Get Point from Surface U V
         Args:
             u_param(int/float):
@@ -201,7 +236,7 @@ class Surface(Dag):
 
         return point
 
-    def get_pnuv_on_sfc(self, param_u, param_v, space=glb.MSpace.world):
+    def get_pnuv_on_sfc(self, param_u, param_v, space=rgb.MSpace.world):
         """Get Point Normal TangentU TangentV from Surface U V
         Args:
             u_param(int/float):
@@ -229,7 +264,7 @@ class Curve(Dag):
     def __init__(self, name):
         super(Curve, self).__init__(name)
 
-    def get_point_at_param(self, param, space=glb.MSpace.world):
+    def get_point_at_param(self, param, space=rgb.MSpace.world):
         """Get Point from Curve Param
         Args:
             param(int/float):
@@ -250,10 +285,15 @@ class Controller(Dag):
         if not n:
             n = "Controller"
         if cp == "nurbCircle":
-            curve = mc.circle(name=n, ch=False)[0]
+            curve = mc.circle(ch=False, nr=(1, 0, 0))[0]
         else:
-            curve = mc.curve(d=1, p=cp, name=n)
+            curve = mc.curve(
+                d=1,
+                p=cp,
+            )
+
         super(Controller, self).__init__(curve)
+        self.name = n
 
     def scale_shape(self, scalev):
         getpivot = mc.xform(self.name, q=True, ws=True, t=True)
@@ -261,6 +301,27 @@ class Controller(Dag):
         mc.select(compo)
         mc.scale(scalev, scalev, scalev, p=getpivot, r=True)
         mc.select(cl=True)
+
+    def set_ctrl_color(self, color=None, tone=0):
+        shape = self.get_shape()
+        shape.attr("overrideEnabled").v = 1
+
+        if not color:
+            _, _, side, _ = lont.deconstruct(self.name)
+            color_dict = {
+                (0, None): rgb.Color.yellow,
+                (1, None): rgb.Color.yellow_soft,
+                (2, None): rgb.Color.yellow_dark,
+                (0, "L"): rgb.Color.blue,
+                (1, "L"): rgb.Color.blue_soft,
+                (2, "L"): rgb.Color.blue_dark,
+                (0, "R"): rgb.Color.red,
+                (1, "R"): rgb.Color.red_soft,
+                (2, "R"): rgb.Color.red_dark,
+            }
+            color = color_dict.get((tone, side))
+
+        shape.attr("overrideColor").v = color
 
 
 class Node(Core):
@@ -282,4 +343,15 @@ def create_null(*args, **kwargs):
 
 
 def parent_constraint(*args, **kwargs):
-    return mc.parentConstraint(*args, **kwargs)
+    con = mc.parentConstraint(*args, **kwargs)
+    return Dag(con[0])
+
+
+def point_constraint(*args, **kwargs):
+    con = mc.pointConstraint(*args, **kwargs)
+    return Dag(con[0])
+
+
+def orient_constraint(*args, **kwargs):
+    con = mc.orientConstraint(*args, **kwargs)
+    return Dag(con[0])

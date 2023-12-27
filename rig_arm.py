@@ -1,0 +1,259 @@
+from imp import reload
+import maya.cmds as mc
+from . import utils
+from . import vector
+from . import rig_base
+from . import core as loc
+from . import naming_tools as lont
+
+
+reload(loc)
+reload(lont)
+reload(utils)
+reload(vector)
+reload(rig_base)
+
+
+class IkFkArmRig(rig_base.Rigbase):
+    def __init__(
+        self,
+        uparm_tmpjnt,
+        forearm_tmpjnt,
+        wrist_tmpjnt,
+        side,
+        desc="",
+        ik_space=None,
+        fk_par=None,
+        jnt_par=None,
+        ctrl_par=None,
+        still_par=None,
+    ):
+        super(IkFkArmRig, self).__init__("Arm", desc, side)
+        self.meta = self.create_meta(ctrl_par)
+        self.still = self.create_still(still_par)
+
+        # Cast
+        compo_names = ["Up", "Fore", "Wrist"]
+        arm_tmpjnts = loc.cast_dags(
+            [uparm_tmpjnt, forearm_tmpjnt, wrist_tmpjnt]
+        )
+
+        jnt_grp = loc.Null(lont.construct("ArmJnt", None, side, "Grp"))
+        jnt_grp.set_parent(self.still)
+
+        # Create Joint
+        self.fk_jnts = []
+        self.ik_jnts = []
+        self.arm_jnts = []
+        self.par_cons = []
+
+        for name, tmpjnt in zip(compo_names, arm_tmpjnts):
+            fkjnt = self._init_dag(
+                loc.Joint(tmpjnt, 0),
+                "Fk{}".format(name),
+                None,
+                side,
+                "RigJnt",
+            )
+            ikjnt = self._init_dag(
+                loc.Joint(tmpjnt, 0),
+                "Ik{}".format(name),
+                None,
+                side,
+                "RigJnt",
+            )
+            armjnt = self._init_dag(loc.Joint(tmpjnt), name, None, side, "Jnt")
+
+            con = loc.parent_constraint(ikjnt, fkjnt, armjnt)
+
+            if self.fk_jnts:
+                fkjnt.set_parent(self.fk_jnts[-1])
+                ikjnt.set_parent(self.ik_jnts[-1])
+                armjnt.set_parent(self.arm_jnts[-1])
+            else:
+                fkjnt.set_parent(jnt_grp)
+                ikjnt.set_parent(jnt_grp)
+                if jnt_par:
+                    armjnt.set_parent(jnt_par)
+
+            self.fk_jnts.append(fkjnt)
+            self.ik_jnts.append(ikjnt)
+            self.arm_jnts.append(armjnt)
+            self.par_cons.append(con)
+
+        self.fk_zrs = []
+        self.fk_ofsts = []
+        self.fk_ctrls = []
+        # Fk
+        for ix, (name, jnt) in enumerate(zip(compo_names, self.fk_jnts)):
+            shape = loc.cp.n_circle
+            if ix == 0:
+                shape = loc.cp.half_cy
+            ctrl = self._init_dag(
+                loc.Controller(shape), name, None, side, "Ctrl"
+            )
+            ctrl.lhattr("s", "v")
+            zr, ofst = self._init_duo_grp(ctrl, name, None, side)
+            zr.snap(jnt)
+            loc.parent_constraint(ctrl, jnt)
+
+            if self.fk_ctrls:
+                zr.set_parent(self.fk_ctrls[-1])
+            else:
+                zr.set_parent(self.meta)
+
+            self.fk_zrs.append(zr)
+            self.fk_ofsts.append(ofst)
+            self.fk_ctrls.append(ctrl)
+
+        # Ik
+        ik_handle = loc.Dag(
+            mc.ikHandle(
+                sj=self.ik_jnts[0],
+                ee=self.ik_jnts[-1],
+                sol="ikRPsolver",
+                n=lont.construct("IkArm", None, self.side, "IkHandle"),
+            )[0]
+        )
+        ik_handle.hide = True
+
+        # Ik Root Ctrl
+        self.ik_root_ctrl = self._init_dag(
+            loc.Controller(loc.cp.cube), "IkUp", None, self.side, "Ctrl"
+        )
+        self.ik_root_zr, self.ik_root_ofst = self._init_duo_grp(
+            self.ik_root_ctrl,
+            "IkUp",
+            None,
+            self.side,
+        )
+        self.ik_root_zr.snap(self.ik_jnts[0])
+        loc.parent_constraint(self.ik_root_ctrl, self.ik_jnts[0])
+        self.ik_root_zr.set_parent(self.meta)
+
+        # Ik Ctrl
+        self.ik_ctrl = self._init_dag(
+            loc.Controller(loc.cp.cube), "IkWrist", None, self.side, "Ctrl"
+        )
+
+        self.ik_zr, self.ik_ofst = self._init_duo_grp(
+            self.ik_ctrl,
+            "IkWrist",
+            None,
+            self.side,
+        )
+
+        self.ik_zr.snap(self.ik_jnts[-1])
+        ik_handle.set_parent(self.ik_ctrl)
+        self.ik_zr.set_parent(self.meta)
+
+        self.ik_pole_ctrl = self._init_dag(
+            loc.Controller(loc.cp.cube),
+            "IkPoleVector",
+            None,
+            self.side,
+            "Ctrl",
+        )
+        self.ik_pole_zr, self.ik_pole_ofst = self._init_duo_grp(
+            self.ik_pole_ctrl,
+            "IkPoleVector",
+            None,
+            self.side,
+        )
+        pole_pos = vector.get_ik_pole_vector(
+            self.ik_jnts[0], self.ik_jnts[1], self.ik_jnts[2]
+        )
+        self.ik_pole_zr.set_pos((pole_pos.x, pole_pos.y, pole_pos.z))
+        self.ik_pole_ctrl.lhattr("r", "s")
+        mc.poleVectorConstraint(self.ik_pole_ctrl, ik_handle)
+        mc.orientConstraint(self.ik_ctrl, self.ik_jnts[-1])
+
+        self.ik_pole_zr.set_parent(self.meta)
+
+        utils.create_space_switch(
+            {
+                "World": loc.main_grp.worldspace_grp,
+                "Wrist": "{}".format(self.ik_ctrl),
+            },
+            self.ik_pole_zr,
+            self.ik_pole_ctrl,
+        )
+
+        # IkFk Switch
+        self.ikfk_ctrl = self._init_dag(
+            loc.Controller(loc.cp.plus),
+            "IkFk",
+            None,
+            self.side,
+            "Ctrl",
+        )
+        ikfk_zr = self._init_dag(
+            loc.Group(self.ikfk_ctrl), "IkFk", None, self.side, "Zr"
+        )
+
+        ikfk_zr.snap_pos(self.arm_jnts[-1])
+        loc.parent_constraint(self.arm_jnts[-1], ikfk_zr)
+        ikfk_zr.set_parent(self.meta)
+        self.ikfk_ctrl.lhattr("t", "r", "s", "v")
+        self.ikfk_ctrl.add(ln="ikFkSwitch", min=0, max=1, k=True)
+
+        # reverse
+        rev = self._init_node(
+            loc.create_node("reverse"), "IKFK", side, None, "Rev"
+        )
+        self.ikfk_ctrl.attr("ikFkSwitch") >> rev.attr("inputX")
+        self.ikfk_ctrl.attr("ikFkSwitch") >> self.fk_zrs[0].attr("v")
+
+        for ctrl_grp in [self.ik_pole_zr, self.ik_root_zr, self.ik_zr]:
+            rev.attr("outputX") >> ctrl_grp.attr("v")
+
+        for con in self.par_cons:
+            self.ikfk_ctrl.attr("ikFkSwitch") >> con.attr("w0")
+            rev.attr("outputX") >> con.attr("w1")
+
+        # Ik Space
+        if ctrl_par:
+            mc.parentConstraint(ctrl_par, self.ik_root_zr, mo=True)
+        if ik_space:
+            utils.create_space_switch(ik_space, self.ik_zr, self.ik_ctrl)
+
+        # Fk Space
+        if fk_par:
+            # Create Grp
+            fk_spacegrp = self._init_dag(
+                loc.Null(), "FkSpace", None, self.side, "Grp"
+            )
+            fk_spacegrp.snap(self.fk_jnts[0])
+            fk_spacegrp.set_parent(fk_par)
+
+            # Parent to root
+            fkpoi_con = loc.point_constraint(fk_spacegrp, self.fk_zrs[0])
+            fkori_con = loc.orient_constraint(fk_spacegrp, self.fk_zrs[0])
+
+            name, _, _, _ = lont.deconstruct(fk_par)
+            spacefk_attr = self.fk_ctrls[0].add(
+                ln="space", en="local:{}".format(name), at="enum", k=True, dv=1
+            )
+
+            # Set Constraint weight
+            spacefk_attr >> fkori_con.attr("w0")
+
+        # Clean Up
+        # Set Color
+        self.main_ctrl += (
+            self.fk_ctrls
+            + [self.ik_ctrl]
+            + [self.ik_root_ctrl]
+            + [self.ik_pole_ctrl]
+        )
+        self.sub_ctrl += [self.ikfk_ctrl]
+        utils.set_ctrls_color(
+            None, self.main_ctrl, self.sub_ctrl, self.dtl_ctrl
+        )
+
+        # Joint skin set
+        self.skin_jnts = self.arm_jnts
+        utils.add_to_skin_set(self.skin_jnts)
+
+        # Detail Vis
+        utils.connect_visiblity()

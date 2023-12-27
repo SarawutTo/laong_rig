@@ -1,18 +1,25 @@
 from imp import reload
-import core
-import naming_tools as naming
+from . import core as loc
+from . import naming_tools as lont
 
-reload(core)
+reload(loc)
+reload(lont)
 
 
 class Rigbase(object):
-    def __init__(self, mod, desc):
+    def __init__(self, mod, desc, side=None):
         self.mod = mod
         self.desc = desc
+        self.side = side
+
+        self.skin_jnts = []
+        self.main_ctrl = []
+        self.sub_ctrl = []
+        self.dtl_ctrl = []
 
     def _init_dag(self, dag, name, index, side, _type):
         rigname = "{}{}{}".format(name, self.mod, self.desc)
-        dag_name = naming.construct(rigname, index, side, _type)
+        dag_name = lont.construct(rigname, index, side, _type)
         try:
             dag.name = dag_name
         except:
@@ -22,7 +29,7 @@ class Rigbase(object):
 
     def _init_node(self, node, name, index, side, _type):
         rigname = "{}{}".format(name, self.mod, self.desc)
-        node_name = naming.construct(rigname, index, side, _type)
+        node_name = lont.construct(rigname, index, side, _type)
         try:
             node.name = node_name
         except:
@@ -33,11 +40,16 @@ class Rigbase(object):
     def create_meta(self, meta_par=None):
         """Create Meta
         Args:
+            side(str):
             meta_par(str):
         Return:
             Loc.Dag : Meta_Grp
         """
-        meta = core.Meta(name="{}{}Rig_Grp".format(self.mod, self.desc))
+        if self.side:
+            n = "{}{}_{}_Rig".format(self.mod, self.desc, self.side)
+        else:
+            n = "{}{}_Rig".format(self.mod, self.desc)
+        meta = loc.Meta(name=n)
 
         # Add Data
         meta.add(
@@ -45,7 +57,19 @@ class Rigbase(object):
             nn="Mod Name :",
             dt="string",
         )
-        meta.attr("modName").text = "{}{}".format(self.mod, self.desc)
+        meta.attr("modName").text = "{}".format(self.mod)
+
+        meta.add(
+            ln="descName",
+            nn="Desc Name :",
+            dt="string",
+        )
+        meta.attr("descName").text = "{}".format(self.desc)
+
+        meta.add(ln="side", nn="Side :", dt="string")
+        meta.attr("side").text = self.side
+
+        meta.add(ln="detailVis", k=True, min=0, max=1, dv=1)
 
         if meta_par:
             meta.snap(meta_par)
@@ -60,8 +84,13 @@ class Rigbase(object):
         Return:
             Loc.Dag : Still_Grp
         """
-        still = core.create_null()
-        still.name = "{}{}Still_Grp".format(self.mod, self.desc)
+        if self.side:
+            n = "{}{}_{}_Still".format(self.mod, self.desc, self.side)
+        else:
+            n = "{}{}Still_Grp".format(self.mod, self.desc)
+        still = loc.create_null()
+        still.name = n
+
         if still_par:
             still.set_parent(still_par)
         return still
@@ -79,20 +108,20 @@ class Rigbase(object):
             Loc.Dag : Offset Group
         """
         rigname = "{}{}{}".format(name, self.mod, self.desc)
-        ofst = core.Group(child)
-        ex = core.Group(ofst)
-        zr = core.Group(ex)
+        ofst = loc.Group(child)
+        ex = loc.Group(ofst)
+        zr = loc.Group(ex)
 
-        ofst.name = naming.construct(rigname, index, side, "Ofst")
-        ex.name = naming.construct(rigname, index, side, "Ex")
-        zr.name = naming.construct(rigname, index, side, "Zr")
+        ofst.name = lont.construct(rigname, index, side, "Ofst")
+        ex.name = lont.construct(rigname, index, side, "Ex")
+        zr.name = lont.construct(rigname, index, side, "Zr")
 
         return zr, ex, ofst
 
     def _init_duo_grp(self, child, name, index, side):
         """Create Zr Offset Group On Top of Childe Object
         Args:
-            child(str):
+            child(Dag):
             name(str):
             index(int):
             side('L'/'R'):
@@ -101,11 +130,12 @@ class Rigbase(object):
             Loc.Dag : Offset Group
         """
         rigname = "{}{}{}".format(name, self.mod, self.desc)
-        ofst = core.Group(child)
-        zr = core.Group(ofst)
+        ofst = loc.Null()
+        zr = loc.Group(ofst)
+        child.set_parent(ofst)
 
-        ofst.name = naming.construct(rigname, index, side, "Ofst")
-        zr.name = naming.construct(rigname, index, side, "Zr")
+        ofst.name = lont.construct(rigname, index, side, "Ofst")
+        zr.name = lont.construct(rigname, index, side, "Zr")
 
         return zr, ofst
 
@@ -121,7 +151,7 @@ class Rigbase(object):
             Loc.Dag : Group
         """
         rigname = "{}{}{}".format(name, self.mod, self.desc)
-        grp = core.Group(child)
-        grp.name = naming.construct(rigname, index, side, _type)
+        grp = loc.Group(child)
+        grp.name = lont.construct(rigname, index, side, _type)
 
         return grp
