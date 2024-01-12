@@ -14,12 +14,12 @@ reload(vector)
 reload(rig_base)
 
 
-class IkFkArmRig(rig_base.Rigbase):
+class IkFkLegRig(rig_base.Rigbase):
     def __init__(
         self,
-        uparm_tmpjnt,
-        forearm_tmpjnt,
-        wrist_tmpjnt,
+        upleg_tmpjnt,
+        lowleg_tmpjnt,
+        ankle_tmpjnt,
         side,
         desc="",
         ikroot_space=None,
@@ -29,18 +29,17 @@ class IkFkArmRig(rig_base.Rigbase):
         ctrl_par=None,
         still_par=None,
     ):
-        super(IkFkArmRig, self).__init__("Arm", desc, side)
+        super(IkFkLegRig, self).__init__("Leg", desc, side)
         self.meta = self.create_meta(ctrl_par)
         self.still = self.create_still(still_par)
-        self.space = self.create_space(self.meta)
 
         # Cast
-        compo_names = ["Up", "Fore", "Wrist"]
+        compo_names = ["Up", "Low", "Ankle"]
         arm_tmpjnts = loc.cast_dags(
-            [uparm_tmpjnt, forearm_tmpjnt, wrist_tmpjnt]
+            [upleg_tmpjnt, lowleg_tmpjnt, ankle_tmpjnt]
         )
 
-        jnt_grp = loc.Null(lont.construct("ArmJnt", None, side, "Grp"))
+        jnt_grp = loc.Null(lont.construct("LegJnt", None, side, "Grp"))
         jnt_grp.set_parent(self.still)
         if ctrl_par:
             loc.parent_constraint(ctrl_par, jnt_grp)
@@ -115,26 +114,18 @@ class IkFkArmRig(rig_base.Rigbase):
         if fk_par:
             # Create Grp
             fk_spacegrp = self._init_dag(
-                loc.Null(), "FkSpace", None, self.side, "Spc"
+                loc.Null(), "FkSpace", None, self.side, "Grp"
             )
-            fk_spacepiv = self._init_dag(
-                loc.Group(fk_spacegrp), "FkSpace", None, self.side, "Piv"
-            )
-            fk_spacepiv.snap(self.fk_jnts[0])
-            fk_spacepiv.set_parent(self.space)
+            fk_spacegrp.snap(self.fk_jnts[0])
+            fk_spacegrp.set_parent(fk_par)
 
-            loc.parent_constraint(fk_par, fk_spacepiv, mo=True)
             # Parent to root
-            loc.point_constraint(fk_spacegrp, self.fk_zrs[0])
+            fkpoi_con = loc.point_constraint(fk_spacegrp, self.fk_zrs[0])
             fkori_con = loc.orient_constraint(fk_spacegrp, self.fk_zrs[0])
 
             name, _, _, _ = lont.deconstruct(fk_par)
             spacefk_attr = self.fk_ctrls[0].add(
-                ln="space",
-                en="World Orient:{}".format(name),
-                at="enum",
-                k=True,
-                dv=1,
+                ln="space", en="local:{}".format(name), at="enum", k=True, dv=1
             )
 
             # Set Constraint weight
@@ -146,18 +137,14 @@ class IkFkArmRig(rig_base.Rigbase):
                 sj=self.ik_jnts[0],
                 ee=self.ik_jnts[-1],
                 sol="ikRPsolver",
-                n=lont.construct("IkArm", None, self.side, "IkHandle"),
+                n=lont.construct("IkLeg", None, self.side, "IkHandle"),
             )[0]
         )
         ik_handle.hide = True
 
         # Ik Root Ctrl
         self.ik_root_ctrl = self._init_dag(
-            loc.Controller(loc.cp.cube),
-            "IkUp",
-            None,
-            self.side,
-            "Ctrl",
+            loc.Controller(loc.cp.cube), "IkUp", None, self.side, "Ctrl"
         )
         self.ik_root_ctrl.lhattr("r", "s", "v")
         self.ik_root_zr, self.ik_root_ofst = self._init_duo_grp(
@@ -174,7 +161,6 @@ class IkFkArmRig(rig_base.Rigbase):
         self.ik_ctrl = self._init_dag(
             loc.Controller(loc.cp.cube), "IkWrist", None, self.side, "Ctrl"
         )
-        self.ik_ctrl.lhattr("s", "v")
 
         self.ik_zr, self.ik_ofst = self._init_duo_grp(
             self.ik_ctrl,
@@ -209,43 +195,36 @@ class IkFkArmRig(rig_base.Rigbase):
         mc.orientConstraint(self.ik_ctrl, self.ik_jnts[-1])
 
         self.ik_pole_zr.set_parent(self.meta)
-        # IK Sqst
 
-        # Ik Space
-        utils.add_divide_attr(self.ik_ctrl, "spaceControl")
-        if ikroot_space:
-            self.create_space_switch(
-                ikroot_space, self.ik_root_zr, self.ik_root_ctrl, self.space
-            )
-
-        if ik_space:
-            self.create_space_switch(
-                ik_space, self.ik_zr, self.ik_ctrl, self.space
-            )
-            mc.renameAttr(self.ik_ctrl.attr("space"), "wristSpace")
-
-        self.create_space_switch(
+        utils.create_space_switch(
             {
                 "World": loc.main_grp.worldspace_grp,
                 "Wrist": "{}".format(self.ik_ctrl),
             },
             self.ik_pole_zr,
-            self.ik_ctrl,
-            self.space,
+            self.ik_pole_ctrl,
         )
-        self.ik_ctrl.attr("space").v = 1
-        mc.renameAttr(self.ik_ctrl.attr("space"), "ikPoleSpace")
+
+        # IK Sqst
+
+        # Ik Space
+        if ikroot_space:
+            utils.create_space_switch(
+                ikroot_space, self.ik_root_zr, self.ik_root_ctrl
+            )
+        if ik_space:
+            utils.create_space_switch(ik_space, self.ik_zr, self.ik_ctrl)
 
         # IkFk Switch
         self.ikfk_ctrl = self._init_dag(
             loc.Controller(loc.cp.plus),
-            "AttrControl",
+            "IkFk",
             None,
             self.side,
             "Ctrl",
         )
         ikfk_zr = self._init_dag(
-            loc.Group(self.ikfk_ctrl), "AttrControl", None, self.side, "Zr"
+            loc.Group(self.ikfk_ctrl), "IkFk", None, self.side, "Zr"
         )
 
         ikfk_zr.snap_pos(self.arm_jnts[-1])
@@ -256,7 +235,7 @@ class IkFkArmRig(rig_base.Rigbase):
 
         # reverse
         rev = self._init_node(
-            loc.create_node("reverse"), "IkFk", side, None, "Rev"
+            loc.create_node("reverse"), "IKFK", side, None, "Rev"
         )
         self.ikfk_ctrl.attr("ikFkSwitch") >> rev.attr("inputX")
         rev.attr("outputX") >> self.fk_zrs[0].attr("v")

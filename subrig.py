@@ -32,6 +32,7 @@ class PointRig(rig_base.Rigbase):
         self.jnt = self._init_dag(loc.Joint(), "", idx, side, "Jnt")
         self.zr, self.ofst = self._init_duo_grp(self.ctrl, "", idx, side)
         loc.parent_constraint(self.ctrl, self.jnt)
+        loc.scale_constraint(self.ctrl, self.jnt)
         self.zr.snap(tmp_jnt)
         self.zr.set_parent(self.meta)
 

@@ -27,7 +27,7 @@ def back_one_dir(absolute_path):
     return directory
 
 
-def get_current_path_data():
+def get_current_path_data() -> tuple[str, str, str, str, str, str]:
     """Get Current File Path Data.
 
     Args:
@@ -35,15 +35,17 @@ def get_current_path_data():
     Returns:
         filepath(str): Full File Path.
         filename(str): FileName with Extension.
-        raw_name(str): Raw FileName.
+        version_name(str): FileName with Version.
+        raw_name(str): Raw File Name witout Version.
         extension(str): Extension.
     """
     full_path = mc.file(q=True, sn=True)
     path = os.path.dirname(full_path)
     file_name = os.path.basename(full_path)
-    raw_name, extension = os.path.splitext(file_name)
+    version_name, extension = os.path.splitext(file_name)
+    raw_name = version_name.split("_")[0]
 
-    return full_path, path, file_name, raw_name, extension
+    return full_path, path, file_name, version_name, raw_name, extension
 
 
 def resolve_path(path):
@@ -117,12 +119,6 @@ def get_cwd_weight():
 
 def get_cwd_blend():
     return os.path.join(os.path.dirname(get_cwd()), "rig_data", "blend")
-
-
-def get_hero_name(filename):
-    hero_name = "{}.ma".format(re.findall("(\w+)(_)", filename)[0][0])
-
-    return hero_name
 
 
 def read_json(path):

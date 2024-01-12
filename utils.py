@@ -62,34 +62,6 @@ def get_ctrl_shape_as_list():
         cp_list.append(vtx_pos)
 
 
-def create_space_switch(space_driver, space_driven, space_ctrl):
-    """ """
-
-    if isinstance(space_driver, dict):
-        a = [i for i in space_driver.values()]
-        b = [i for i in space_driver.keys()]
-
-        par = mc.parentConstraint(a, space_driven, mo=True)[0]
-        mc.addAttr(space_ctrl, ln="space", en=":".join(b), at="enum", k=True)
-        for ix, each in enumerate(space_driver):
-            con = mc.createNode(
-                "condition",
-                n="{}{}Space_Con".format(
-                    each, str(space_driven).split("_")[0]
-                ),
-            )
-            mc.setAttr("{}.st".format(con), ix)
-            mc.setAttr("{}.colorIfFalseR".format(con), 0)
-            mc.setAttr("{}.colorIfTrueR".format(con), 1)
-
-            mc.connectAttr("{}.space".format(space_ctrl), "{}.ft".format(con))
-            mc.connectAttr(
-                "{}.outColorR".format(con), "{}.w{}".format(par, ix)
-            )
-    else:
-        mc.parentConstraint(space_driver, space_driven, mo=True)
-
-
 def set_ctrls_color(
     color: Union[None, rgb.Color],
     mainctrl_list: list[loc.Controller],
@@ -125,3 +97,8 @@ def add_to_skin_set(jnt_list: list[loc.Joint]):
 
 def connect_visiblity():
     pass
+
+
+def add_divide_attr(ctrl: loc.Dag, attr_name: str):
+    div_attr = ctrl.add(ln=attr_name, en="--------------", at="enum", k=True)
+    div_attr.lock = True

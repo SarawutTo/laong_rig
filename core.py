@@ -45,8 +45,8 @@ class Attribute(object):
         return mc.getAttr(self.attr, q=True, l=True)
 
     @lock.setter
-    def lock(self):
-        mc.setAttr(self.attr, l=True)
+    def lock(self, lock):
+        mc.setAttr(self.attr, l=lock)
 
     v = value
 
@@ -211,8 +211,8 @@ class Joint(Dag):
 
 
 class Meta(Dag):
-    def __init__(self, name=None):
-        meta_grp = mc.createNode("transform", n=name)
+    def __init__(self, n=None):
+        meta_grp = mc.createNode("transform", n=n)
         super(Meta, self).__init__(meta_grp)
 
 
@@ -354,4 +354,9 @@ def point_constraint(*args, **kwargs):
 
 def orient_constraint(*args, **kwargs):
     con = mc.orientConstraint(*args, **kwargs)
+    return Dag(con[0])
+
+
+def scale_constraint(*args, **kwargs):
+    con = mc.scaleConstraint(*args, **kwargs)
     return Dag(con[0])

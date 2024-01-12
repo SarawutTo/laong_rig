@@ -45,11 +45,10 @@ class Rigbase(object):
         Return:
             Loc.Dag : Meta_Grp
         """
-        if self.side:
-            n = "{}{}_{}_Rig".format(self.mod, self.desc, self.side)
-        else:
-            n = "{}{}_Rig".format(self.mod, self.desc)
-        meta = loc.Meta(name=n)
+
+        meta = loc.Meta(
+            n=lont.construct(f"{self.mod}{self.desc}", None, self.side, "Rig")
+        )
 
         # Add Data
         meta.add(
@@ -84,16 +83,33 @@ class Rigbase(object):
         Return:
             Loc.Dag : Still_Grp
         """
-        if self.side:
-            n = "{}{}_{}_Still".format(self.mod, self.desc, self.side)
-        else:
-            n = "{}{}Still_Grp".format(self.mod, self.desc)
-        still = loc.create_null()
-        still.name = n
+        still = loc.create_null(
+            n=lont.construct(
+                f"{self.mod}{self.desc}", None, self.side, "Still"
+            )
+        )
 
         if still_par:
             still.set_parent(still_par)
         return still
+
+    def create_space(self, space_par=None):
+        """Create Space Grp
+        Args:
+            space_par(str):
+        Return:
+            Loc.Dag : Space_Grp
+        """
+
+        space = loc.create_null(
+            n=lont.construct(
+                f"{self.mod}{self.desc}", None, self.side, "Space"
+            )
+        )
+
+        if space_par:
+            space.set_parent(space_par)
+        return space
 
     def _init_tri_grp(self, child, name, index, side):
         """Create Zr Extra Offset Group On Top of Childe Object
@@ -155,3 +171,50 @@ class Rigbase(object):
         grp.name = lont.construct(rigname, index, side, _type)
 
         return grp
+
+    def create_space_switch(
+        self, space_driver, space_driven, space_ctrl: loc.Dag, par_grp
+    ):
+        """ """
+
+        if isinstance(space_driver, dict):
+            space_drivers = []
+            for space_name, driver in space_driver.items():
+                driven_name, _, _, _ = lont.deconstruct(space_driven)
+
+                space_grp = loc.Null()
+                space_grp.name = lont.construct(
+                    f"{space_name}{driven_name}", None, self.side, "Spc"
+                )
+                space_piv = loc.Group(space_grp)
+                space_piv.name = lont.construct(
+                    f"{space_name}{driven_name}", None, self.side, "Piv"
+                )
+
+                space_piv.snap(driver)
+                space_piv.set_parent(par_grp)
+                loc.parent_constraint(driver, space_piv)
+                space_drivers.append(space_grp)
+
+            driver_name = [i for i in space_driver.keys()]
+            par = loc.parent_constraint(space_drivers, space_driven, mo=True)
+
+            # Space Attr
+            space_ctrl.add(
+                ln="space", en=":".join(driver_name), at="enum", k=True
+            )
+            for ix, each in enumerate(space_driver):
+                con = loc.create_node(
+                    "condition",
+                    n="{}{}Space_Con".format(
+                        each, str(space_driven).split("_")[0]
+                    ),
+                )
+                con.attr("st").v = ix
+                con.attr("colorIfFalseR").v = 0
+                con.attr("colorIfTrueR").v = 1
+
+                space_ctrl.attr("space") >> con.attr("ft")
+                con.attr("outColorR") >> par.attr(f"w{ix}")
+        else:
+            loc.parent_constraint(space_driver, space_driven, mo=True)

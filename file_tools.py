@@ -7,8 +7,12 @@ from imp import reload
 # Import Modules.
 import maya.cmds as mc
 from . import system_os as sos
+from . import rig_global as rgb
+from . import rig_data as rd
 
 reload(sos)
+reload(rgb)
+reload(rd)
 
 
 def _init_cwd(cwd=""):
@@ -150,10 +154,10 @@ def save_to(mod, cwd):
 def save_next():
     """Save to Next Version."""
     cwd = sos.get_cwd()
-    _, _, filename, _, _ = sos.get_current_path_data()
+    _, _, version_name, _, _ = sos.get_current_path_data()
     nextfile_path = sos.join_path(
         cwd,
-        get_next_version(filename),
+        get_next_version(version_name),
     )
 
     mc.file(rename=nextfile_path)
@@ -191,29 +195,35 @@ def rig_current():
     Return:
         Bool : result True/False
     """
-    _, _, _, name, _ = sos.get_current_path_data()
-    py_name = name.split("_")[0]
+    _, _, _, _, raw_name, _ = sos.get_current_path_data()
     path = sos.get_cwd_python()
-    import_py = "import {}".format(py_name)
-    reload_py = "reload({})".format(py_name)
-    run_function = "{}.main()".format(py_name)
+    import_py = f"import {raw_name}"
+    reload_py = f"reload({raw_name})"
+    run_function = f"{raw_name}.main()"
 
-    py_fullpath = sos.join_path(path, "{}.py".format(py_name))
+    py_fullpath = sos.join_path(path, f"{raw_name}.py")
     if not os.path.exists(py_fullpath):
-        raise ValueError("# This File Does Not Exist {} ".format(py_fullpath))
+        raise ValueError(f"# This File Does Not Exist {py_fullpath} ")
     if not path in sys.path:
         sys.path.append(path)
     exec(import_py)
     exec(reload_py)
     exec(run_function)
 
+    # Read Control
+    rd.read_control()
+
+    # Delete Grp
+    if mc.objExists(rgb.MainGroup.delete_grp):
+        mc.setAttr(f"{rgb.MainGroup.delete_grp}.v", 0)
+
 
 def rig_and_hero():
     """Rig and Hero."""
     rig_current()
-    _, path, filename, _, _ = sos.get_current_path_data()
+    _, path, _, _, raw_name, _ = sos.get_current_path_data()
     rig_path = sos.back_one_dir(path)
-    hero_path = sos.join_path(rig_path, "hero", sos.get_hero_name(filename))
+    hero_path = sos.join_path(rig_path, "hero", raw_name)
 
     mc.file(rename=hero_path)
     mc.file(s=True)

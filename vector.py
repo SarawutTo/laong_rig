@@ -172,7 +172,7 @@ def decompose_matrix(matrix):
     return translate_value, rotate_value, scale_value
 
 
-def get_ik_pole_vector(root, mid, end, amp=15):
+def get_ik_pole_vector(root, mid, end, amp=1.5):
     root_vec = loc.Dag(root).world_vec()
     mid_vec = loc.Dag(mid).world_vec()
     end_vec = loc.Dag(end).world_vec()
@@ -181,7 +181,9 @@ def get_ik_pole_vector(root, mid, end, amp=15):
     root_mid = mid_vec - root_vec
 
     half_vector = projection_b_on_a(root_end, root_mid)
-    ofst_vec = (root_mid - half_vector) * amp
+    pole_vector_dir = root_mid - half_vector
+    pole_vector_dir.normalize()
+    ofst_vec = pole_vector_dir * (root_mid.length() * amp)
     pole_vector = ofst_vec + half_vector + root_vec
 
     return pole_vector
