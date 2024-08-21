@@ -1,7 +1,4 @@
-from dataclasses import dataclass
-
-
-JOINT_RADIUS = 1
+JOINT_RADIUS = 3
 CTRL_SCALE = 1
 
 # Naming Tools
@@ -30,6 +27,11 @@ class GlobalAttr(object):
     ctrl_scale = CTRL_SCALE
 
 
+class Side(object):
+    left = "L"
+    right = "R"
+
+
 class MainGroup(object):
     # World Scale
     rig_grp = RIG_GRP
@@ -47,6 +49,7 @@ class Color(object):
     clear = 0
     black = 1
     grey = 3
+    green = 14
 
     yellow = 17
     yellow_soft = 21
@@ -64,6 +67,31 @@ class Color(object):
 class MSpace(object):
     obj = 2
     world = 4
+
+
+class Axis(object):
+    x = (1, 0, 0)
+    y = (0, 1, 0)
+    z = (0, 0, 1)
+
+
+class SurfaceUV(object):
+    u = "U"
+    v = "V"
+
+
+class Operation(object):
+    class PlusMinusAvers(object):
+        no_operation = 0
+        sum = 1
+        subtract = 2
+        average = 3
+
+    class MultDivide(object):
+        no_operation = 0
+        mult = 1
+        divide = 2
+        power = 3
 
 
 class Cp(object):
@@ -353,4 +381,14 @@ class Cp(object):
         (0.5572, 0.5432, 0.3136),
         (0.5572, 0.6273, 0.0),
         (0.5572, 0.5432, -0.3136),
+    ]
+    locator = [
+        (0, 1, 0),
+        (0, -1, 0),
+        (0, 0, 0),
+        (-1, 0, 0),
+        (1, 0, 0),
+        (0, 0, 0),
+        (0, 0, -1),
+        (0, 0, 1),
     ]

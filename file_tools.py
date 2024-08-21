@@ -154,10 +154,10 @@ def save_to(mod, cwd):
 def save_next():
     """Save to Next Version."""
     cwd = sos.get_cwd()
-    _, _, version_name, _, _ = sos.get_current_path_data()
+    _, _, file_name, _, _, _ = sos.get_current_path_data()
     nextfile_path = sos.join_path(
         cwd,
-        get_next_version(version_name),
+        get_next_version(file_name),
     )
 
     mc.file(rename=nextfile_path)
@@ -197,13 +197,13 @@ def rig_current():
     """
     _, _, _, _, raw_name, _ = sos.get_current_path_data()
     path = sos.get_cwd_python()
-    import_py = f"import {raw_name}"
-    reload_py = f"reload({raw_name})"
-    run_function = f"{raw_name}.main()"
+    import_py = "import {}".format(raw_name)
+    reload_py = "reload({})".format(raw_name)
+    run_function = "{}.main()".format(raw_name)
 
-    py_fullpath = sos.join_path(path, f"{raw_name}.py")
+    py_fullpath = sos.join_path(path, "{}.py".format(raw_name))
     if not os.path.exists(py_fullpath):
-        raise ValueError(f"# This File Does Not Exist {py_fullpath} ")
+        raise ValueError("# This File Does Not Exist {} ".format(py_fullpath))
     if not path in sys.path:
         sys.path.append(path)
     exec(import_py)
@@ -215,7 +215,7 @@ def rig_current():
 
     # Delete Grp
     if mc.objExists(rgb.MainGroup.delete_grp):
-        mc.setAttr(f"{rgb.MainGroup.delete_grp}.v", 0)
+        mc.setAttr("{}.v".format(rgb.MainGroup.delete_grp), 0)
 
 
 def rig_and_hero():
@@ -223,9 +223,10 @@ def rig_and_hero():
     rig_current()
     _, path, _, _, raw_name, _ = sos.get_current_path_data()
     rig_path = sos.back_one_dir(path)
-    hero_path = sos.join_path(rig_path, "hero", raw_name)
+    hero_path = sos.join_path(rig_path, "hero", "{}.ma".format(raw_name))
 
     mc.file(rename=hero_path)
+    mc.delete(rgb.MainGroup.delete_grp)
     mc.file(s=True)
 
 

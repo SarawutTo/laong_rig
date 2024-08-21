@@ -1,12 +1,12 @@
 from imp import reload
 from . import core as loc
 from . import rig_base
-from . import naming_tools as lont
+from . import naming_tools as lnt
 import maya.cmds as mc
 
 
 reload(loc)
-reload(lont)
+reload(lnt)
 reload(rig_base)
 
 
@@ -48,13 +48,13 @@ class TailRig(rig_base.Rigbase):
             idx = ix + 1
             point = curve.get_point_at_param(ix * ctrl_dis)
 
-            ctrl = self._init_dag(
+            ctrl = self.init_dag(
                 loc.Controller(loc.cp.n_circle), "Fk", idx, side, "Ctrl"
             )
             zr, ofst = self._init_duo_grp(ctrl, "Fk", idx, side)
             zr.set_pos((point.x, point.y, point.z))
 
-            jnt = self._init_dag(loc.Joint(), "Fk", idx, side, "Jnt")
+            jnt = self.init_dag(loc.Joint(), "Fk", idx, side, "Jnt")
 
             loc.parent_constraint(ctrl, jnt)
 
@@ -73,7 +73,7 @@ class TailRig(rig_base.Rigbase):
         mc.skinCluster(
             self.main_jnts,
             curve,
-            n=lont.construct(
+            n=lnt.construct(
                 "{}{}Crv".format(mod, desc), None, side, "SkinCluster"
             ),
         )

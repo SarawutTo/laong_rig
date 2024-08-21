@@ -1,15 +1,17 @@
 from imp import reload
 from . import core as loc
-from . import naming_tools as lont
+from . import naming_tools as lnt
 
 reload(loc)
-reload(lont)
+reload(lnt)
 
 
 class Rigbase(object):
     def __init__(self, mod, desc, side=None):
         self.mod = mod
         self.desc = desc
+        if not side:
+            side = ""
         self.side = side
 
         self.skin_jnts = []
@@ -17,9 +19,9 @@ class Rigbase(object):
         self.sub_ctrl = []
         self.dtl_ctrl = []
 
-    def _init_dag(self, dag, name, index, side, _type):
+    def init_dag(self, dag, name, index, side, _type):
         rigname = "{}{}{}".format(name, self.mod, self.desc)
-        dag_name = lont.construct(rigname, index, side, _type)
+        dag_name = lnt.construct(rigname, index, side, _type)
         try:
             dag.name = dag_name
         except:
@@ -27,9 +29,9 @@ class Rigbase(object):
 
         return dag
 
-    def _init_node(self, node, name, index, side, _type):
+    def init_node(self, node, name, index, side, _type):
         rigname = "{}{}".format(name, self.mod, self.desc)
-        node_name = lont.construct(rigname, index, side, _type)
+        node_name = lnt.construct(rigname, index, side, _type)
         try:
             node.name = node_name
         except:
@@ -37,7 +39,7 @@ class Rigbase(object):
 
         return node
 
-    def create_meta(self, meta_par=None):
+    def create_meta(self, par=None):
         """Create Meta
         Args:
             side(str):
@@ -45,9 +47,10 @@ class Rigbase(object):
         Return:
             Loc.Dag : Meta_Grp
         """
-
         meta = loc.Meta(
-            n=lont.construct(f"{self.mod}{self.desc}", None, self.side, "Rig")
+            n=lnt.construct(
+                "{}{}".format(self.mod, self.desc), None, self.side, "Rig"
+            )
         )
 
         # Add Data
@@ -69,14 +72,13 @@ class Rigbase(object):
         meta.attr("side").text = self.side
 
         meta.add(ln="detailVis", k=True, min=0, max=1, dv=1)
-
-        if meta_par:
-            meta.snap(meta_par)
-            meta.set_parent(meta_par)
+        if par:
+            meta.snap(par)
+            meta.set_parent(par)
 
         return meta
 
-    def create_still(self, still_par=None):
+    def create_still(self, par=None):
         """Create Still Grp
         Args:
             still_par(str):
@@ -84,55 +86,52 @@ class Rigbase(object):
             Loc.Dag : Still_Grp
         """
         still = loc.create_null(
-            n=lont.construct(
-                f"{self.mod}{self.desc}", None, self.side, "Still"
+            n=lnt.construct(
+                "{}{}".format(self.mod, self.desc), None, self.side, "Still"
             )
         )
 
-        if still_par:
-            still.set_parent(still_par)
+        if par:
+            still.set_parent(par)
         return still
 
-    def create_space(self, space_par=None):
+    def create_space(self, par=None):
         """Create Space Grp
         Args:
             space_par(str):
         Return:
             Loc.Dag : Space_Grp
         """
-
         space = loc.create_null(
-            n=lont.construct(
-                f"{self.mod}{self.desc}", None, self.side, "Space"
+            n=lnt.construct(
+                "{}{}".format(self.mod, self.desc), None, self.side, "Space"
             )
         )
 
-        if space_par:
-            space.set_parent(space_par)
+        if par:
+            space.set_parent(par)
         return space
 
-    def _init_tri_grp(self, child, name, index, side):
-        """Create Zr Extra Offset Group On Top of Childe Object
+    def create_driver(self, par=None):
+        """Create ShapeDriver Grp
         Args:
-            child(str):
-            name(str):
-            index(int):
-            side('L'/'R'):
+            par(str):
         Return:
-            Loc.Dag : Zr Group
-            Loc.Dag : Extra Group
-            Loc.Dag : Offset Group
+            Loc.Dag : ShapeDriver_Grp
         """
-        rigname = "{}{}{}".format(name, self.mod, self.desc)
-        ofst = loc.Group(child)
-        ex = loc.Group(ofst)
-        zr = loc.Group(ex)
+        sd = loc.create_null(
+            n=lnt.construct(
+                "{}{}".format(self.mod, self.desc),
+                None,
+                self.side,
+                "ShapeDriver",
+            )
+        )
+        sd.lhattr("t", "r", "s", "v")
 
-        ofst.name = lont.construct(rigname, index, side, "Ofst")
-        ex.name = lont.construct(rigname, index, side, "Ex")
-        zr.name = lont.construct(rigname, index, side, "Zr")
-
-        return zr, ex, ofst
+        if par:
+            sd.set_parent(par)
+        return sd
 
     def _init_duo_grp(self, child, name, index, side):
         """Create Zr Offset Group On Top of Childe Object
@@ -150,10 +149,93 @@ class Rigbase(object):
         zr = loc.Group(ofst)
         child.set_parent(ofst)
 
-        ofst.name = lont.construct(rigname, index, side, "Ofst")
-        zr.name = lont.construct(rigname, index, side, "Zr")
+        ofst.name = lnt.construct(rigname, index, side, "Ofst")
+        zr.name = lnt.construct(rigname, index, side, "Zr")
 
         return zr, ofst
+
+    def _init_tri_grp(self, child, name, index, side):
+        """Create Zr Extra Offset Group On Top of Childe Object
+        Args:
+            child(str):
+            name(str):
+            index(int):
+            side('L'/'R'):
+        Return:
+            Loc.Dag : Zr Group
+            Loc.Dag : Extra Group
+            Loc.Dag : Offset Group
+        """
+        rigname = "{}{}{}".format(name, self.mod, self.desc)
+        ofst = loc.Null()
+        ex = loc.Group(ofst)
+        zr = loc.Group(ex)
+        child.set_parent(ofst)
+
+        ofst.name = lnt.construct(rigname, index, side, "Ofst")
+        ex.name = lnt.construct(rigname, index, side, "Ex")
+        zr.name = lnt.construct(rigname, index, side, "Zr")
+
+        return zr, ex, ofst
+
+    def _init_quad_grp(self, child, name, index, side):
+        """Create Zr Extra Offset Group On Top of Childe Object
+        Args:
+            child(str):
+            name(str):
+            index(int):
+            side('L'/'R'):
+        Return:
+            Loc.Dag : Zr Group
+            Loc.Dag : Extra Group
+            Loc.Dag : Key Group
+            Loc.Dag : Offset Group
+        """
+        rigname = "{}{}{}".format(name, self.mod, self.desc)
+        ofst = loc.Null()
+        key = loc.Group(ofst)
+        ex = loc.Group(key)
+        zr = loc.Group(ex)
+        child.set_parent(ofst)
+
+        ofst.name = lnt.construct(rigname, index, side, "Ofst")
+        ex.name = lnt.construct(rigname, index, side, "Ex")
+        key.name = lnt.construct(rigname, index, side, "Key")
+        zr.name = lnt.construct(rigname, index, side, "Zr")
+
+        return zr, ex, key, ofst
+
+    def split_to_pos_neg(self, node, shape, name, attr, neg, pos):
+        cap_attr = lnt.upfirst(attr)
+        rigname_pos = "{}{}Pos{}{}".format(name, cap_attr, self.mod, self.desc)
+        rigname_neg = "{}{}Neg{}{}".format(name, cap_attr, self.mod, self.desc)
+
+        pos_clamp = loc.create_node("clamp")
+        neg_clamp = loc.create_node("clamp")
+
+        pos_clamp.name = lnt.construct(rigname_pos, None, self.side, "Clamp")
+        neg_clamp.name = lnt.construct(rigname_neg, None, self.side, "Clamp")
+
+        # Set clamp ranges
+        pos_clamp.attr("minR").v = 0
+        pos_clamp.attr("maxR").v = pos
+
+        neg_clamp.attr("minR").v = neg
+        neg_clamp.attr("maxR").v = 0
+
+        # Connect the input attribute to the clamps
+        node.attr(attr) >> pos_clamp.attr("inputR")
+        node.attr(attr) >> neg_clamp.attr("inputR")
+
+        node.attr(attr).limit(neg, pos)
+
+        pos_attr = shape.add(ln="{}{}Pos".format(name, cap_attr), k=False)
+        neg_attr = shape.add(ln="{}{}Neg".format(name, cap_attr), k=False)
+
+        pos_clamp.attr("outputR") >> pos_attr
+        neg_clamp.attr("outputR") >> neg_attr
+
+        return pos_attr, neg_attr
 
     def create_group_on_top(self, child, name, index, side, _type):
         """Create Group On Top of Childe Object
@@ -168,27 +250,33 @@ class Rigbase(object):
         """
         rigname = "{}{}{}".format(name, self.mod, self.desc)
         grp = loc.Group(child)
-        grp.name = lont.construct(rigname, index, side, _type)
+        grp.name = lnt.construct(rigname, index, side, _type)
 
         return grp
 
     def create_space_switch(
-        self, space_driver, space_driven, space_ctrl: loc.Dag, par_grp
+        self, space_driver, space_driven, space_ctrl, par_grp
     ):
         """ """
 
         if isinstance(space_driver, dict):
             space_drivers = []
             for space_name, driver in space_driver.items():
-                driven_name, _, _, _ = lont.deconstruct(space_driven)
+                driven_name, _, _, _ = lnt.deconstruct(space_driven)
 
                 space_grp = loc.Null()
-                space_grp.name = lont.construct(
-                    f"{space_name}{driven_name}", None, self.side, "Spc"
+                space_grp.name = lnt.construct(
+                    "{}{}".format(space_name, driven_name),
+                    None,
+                    self.side,
+                    "Spc",
                 )
                 space_piv = loc.Group(space_grp)
-                space_piv.name = lont.construct(
-                    f"{space_name}{driven_name}", None, self.side, "Piv"
+                space_piv.name = lnt.construct(
+                    "{}{}".format(space_name, driven_name),
+                    None,
+                    self.side,
+                    "Piv",
                 )
 
                 space_piv.snap(driver)
@@ -206,8 +294,13 @@ class Rigbase(object):
             for ix, each in enumerate(space_driver):
                 con = loc.create_node(
                     "condition",
-                    n="{}{}Space_Con".format(
-                        each, str(space_driven).split("_")[0]
+                    n=lnt.construct(
+                        "{}{}Space".format(
+                            each, str(space_driven).split("_")[0]
+                        ),
+                        None,
+                        self.side,
+                        "Con",
                     ),
                 )
                 con.attr("st").v = ix
@@ -215,6 +308,6 @@ class Rigbase(object):
                 con.attr("colorIfTrueR").v = 1
 
                 space_ctrl.attr("space") >> con.attr("ft")
-                con.attr("outColorR") >> par.attr(f"w{ix}")
+                con.attr("outColorR") >> par.attr("w{}".format(ix))
         else:
             loc.parent_constraint(space_driver, space_driven, mo=True)

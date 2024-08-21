@@ -1,12 +1,12 @@
 from imp import reload
 from . import core as loc
 from . import rig_base
-from . import naming_tools as lont
+from . import naming_tools as lnt
 import maya.cmds as mc
 
 
 reload(loc)
-reload(lont)
+reload(lnt)
 reload(rig_base)
 
 

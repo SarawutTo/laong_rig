@@ -1,15 +1,14 @@
 from imp import reload
-from . import core
 
-reload(core)
+# from typing import Union
 
 
-def deconstruct(obj_name):
-    if isinstance(obj_name, core.Core):
-        obj_name = obj_name.name
-
+def deconstruct(obj_name):  #: Union[str, loc.Core]
     try:
-        compo = obj_name.split("_")
+        try:
+            compo = obj_name.name.split("_")
+        except:
+            compo = obj_name.split("_")
     except:
         return TypeError("Cant Split Name Object is {}".format(type(obj_name)))
 
@@ -31,6 +30,10 @@ def deconstruct(obj_name):
 
 def construct(name, index, side, _type):
     name_list = []
+    print(name, index, side, _type)
+    if index:
+        index = "{:02d}".format(int(index))
+
     for compo in [name, index, side, _type]:
         if compo:
             name_list.append(str(compo))

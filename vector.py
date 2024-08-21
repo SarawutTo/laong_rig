@@ -5,17 +5,56 @@ import maya.OpenMaya as om
 
 from . import core as loc
 
+# from typing import Union # Uncomment if you need this for Python 3
+
 ### Formula Document ###
 # dot product = ((ax*bx)+(ay*by)+(az*bz)) * cosine
 
 
-def calculate_length(root_loc, end_loc):
+def lerp(a, b, t):  # lerp(a: float, b: float, t: float) -> float:
+    """Linear interpolate on the scale given by a to b, using t as the point on that scale.
+
+    By laundmo
+    """
+    return (1 - t) * a + t * b
+
+
+def inv_lerp(a, b, v):  # inv_lerp(a: float, b: float, v: float) -> float:
+    """Inverse Linear Interpolation, get the fraction between a and b on which v resides.
+
+    By laundmo
+    """
+    return (v - a) / (b - a)
+
+
+def reverse(value):  # reverse(value: float) -> float:
+    """Inverse value of value in 1-0 table."""
+    return 1 - value
+
+
+def remap(
+    i_min, i_max, o_min, o_max, v
+):  # remap(i_min: float, i_max: float, o_min: float, o_max: float, v: float) -> float:
+    """Remap values from one linear scale to another, a combination of lerp and inv_lerp.
+    i_min and i_max are the scale on which the original value resides,
+    o_min and o_max are the scale to which it should be mapped.
+
+    By laundmo
+    """
+    return lerp(o_min, o_max, inv_lerp(i_min, i_max, v))
+
+
+def distance_btw(
+    root_loc, end_loc
+):  # distance_btw(root_loc: loc.Dag, end_loc: loc.Dag) -> float:
     root_vec = om.MVector(*root_loc.world_pos)
     end_vec = om.MVector(*end_loc.world_pos)
     return (end_vec - root_vec).length()
 
 
-def dot_product(vec_a, vec_b):
+def dot_product(
+    vec_a, vec_b
+):  # dot_product(vec_a: list[float], vec_b: list[float]) -> float:
     if len(vec_a) != len(vec_b):
         raise ValueError("Vectors must have the same number of dimensions")
     result = 0
@@ -24,7 +63,7 @@ def dot_product(vec_a, vec_b):
     return result
 
 
-def vector_degree(u, v):
+def vector_degree(u, v):  # vector_degree(u: str, v: str) -> float:
     u_ws = mc.xform(u, q=True, t=True, ws=True)
     v_ws = mc.xform(v, q=True, t=True, ws=True)
 
@@ -34,16 +73,28 @@ def vector_degree(u, v):
     return math.acos(dot) * 180 / math.pi
 
 
-def _get_vector_a_to_b(a, b):
-    a_pos = om.MVector(*a.world_pos)
-    b_pos = om.MVector(*b.world_pos)
-    vector = b_pos - a_pos
-    vector.normalize()
+def get_vector_a_to_b(
+    a, b
+):  # get_vector_a_to_b(a: loc.Dag, b: loc.Dag) -> om.MVector:
+    a_vec = a.world_vec
+    b_vec = b.world_vec
+    vector = b_vec - a_vec  # vector: om.MVector = b_vec - a_vec
 
     return vector
 
 
-def aim_by_vec(obj, up_posi, aim_posi):
+def get_point_btw_2_vector(
+    a, b, weight
+):  # get_point_btw_2_vector(a: loc.Dag, b: loc.Dag, weight: float) -> om.MVector:
+    aim_vec = get_vector_a_to_b(a, b)
+    weighted_vec = aim_vec * weight
+
+    return a.world_vec + weighted_vec
+
+
+def aim_by_vec(
+    obj, up_posi, aim_posi
+):  # aim_by_vec(obj: str, up_posi: list[float], aim_posi: list[float]) -> None:
     # Positioning
     # pos, norm, _, tv = pru.get_pnuv_at_surface_param(
     #     nrb=self.rbl_nrb, pu = 0.5, pv = ix)
@@ -93,30 +144,7 @@ def aim_by_vec(obj, up_posi, aim_posi):
     mc.xform(obj, ro=rot_value, ws=True)
 
 
-# sels = mc.ls(sl=True)
-# A = sels[0]
-# B = sels[1]
-
-# A_pos = mc.xform(A, q=True, t=True)
-# B_pos = mc.xform(B, q=True, t=True)
-
-
-# curves = mc.curve(d=1, p=(A_pos,B_pos),n='Btw_Crv')
-
-# cvs = mc.ls('{}.cv[:]'.format(curves), fl = True)
-
-# A_cluster = mc.cluster(cvs[0], n='{}_Cst'.format(A))
-# B_cluster = mc.cluster(cvs[1], n='{}_Cst'.format(B))
-# mc.hide(A_cluster, B_cluster)
-# mc.parent(A_cluster,A)
-# mc.parent(B_cluster,B)
-
-import maya.cmds as mc
-import maya.OpenMaya as om
-import math
-
-
-def get_object_ws_trs(obj):
+def get_object_ws_trs(obj):  # get_object_ws_trs(obj: str) -> tuple:
     """Get Object world space trs value.
 
     Args:
@@ -150,7 +178,9 @@ def get_object_ws_trs(obj):
     return trans_value, rotate_value, scale_value
 
 
-def decompose_matrix(matrix):
+def decompose_matrix(
+    matrix,
+):  # decompose_matrix(matrix: list[float]) -> tuple:
     mmtx = om.MMatrix()
     om.MScriptUtil.createMatrixFromList(matrix, mmtx)
     xform_mtx = om.MTransformationMatrix(mmtx)
@@ -172,10 +202,12 @@ def decompose_matrix(matrix):
     return translate_value, rotate_value, scale_value
 
 
-def get_ik_pole_vector(root, mid, end, amp=1.5):
-    root_vec = loc.Dag(root).world_vec()
-    mid_vec = loc.Dag(mid).world_vec()
-    end_vec = loc.Dag(end).world_vec()
+def get_ik_pole_vector(
+    root, mid, end, amp=1.5
+):  # get_ik_pole_vector(root: str, mid: str, end: str, amp: float = 1.5) -> om.MVector:
+    root_vec = loc.Dag(root).world_vec
+    mid_vec = loc.Dag(mid).world_vec
+    end_vec = loc.Dag(end).world_vec
 
     root_end = end_vec - root_vec
     root_mid = mid_vec - root_vec
@@ -189,13 +221,15 @@ def get_ik_pole_vector(root, mid, end, amp=1.5):
     return pole_vector
 
 
-def projection_b_on_a(vec_a, vec_b):
+def projection_b_on_a(
+    vec_a, vec_b
+):  # projection_b_on_a(vec_a: om.MVector, vec_b: om.MVector) -> om.MVector:
     """Formula : b*a/a.length() * a.normalize()
     Args:
-        vec_a(om.Mvector)
-        vec_b(om.Mvector)
+        vec_a(om.MVector)
+        vec_b(om.MVector)
     Return:
-        result(om.Mvector)
+        result(om.MVector)
     """
     new_vec_a = om.MVector(vec_a.x, vec_a.y, vec_a.z)
 

@@ -27,7 +27,7 @@ def back_one_dir(absolute_path):
     return directory
 
 
-def get_current_path_data() -> tuple[str, str, str, str, str, str]:
+def get_current_path_data():  # -> tuple[str, str, str, str, str, str]:
     """Get Current File Path Data.
 
     Args:

@@ -19,9 +19,10 @@ def write_weight():
 
 def read_control():
     _, _, _, _, name, _ = sos.get_current_path_data()
-    path = sos.join_path(sos.get_cwd_ctrl(), f"{name}_Ctrl.json")
+    path = sos.join_path(sos.get_cwd_ctrl(), "{}_Ctrl.json".format(name))
     if not os.path.exists(path):
-        return mc.warning(f" # {name} Controller Data Do not Exists //")
+        print("# {} Controller Data Do not Exists //".format(name))
+        return
     data = sos.read_json(path)
     ctrls = mc.ls("*_Ctrl")
     for ctrl in ctrls:
@@ -31,7 +32,7 @@ def read_control():
 
 def write_control():
     _, _, _, _, name, _ = sos.get_current_path_data()
-    path = sos.join_path(sos.get_cwd_ctrl(), f"{name}_Ctrl.json")
+    path = sos.join_path(sos.get_cwd_ctrl(), "{}_Ctrl.json".format(name))
     data = {}
     ctrls = mc.ls("*_Ctrl")
     if not ctrls:
@@ -43,10 +44,10 @@ def write_control():
         data[ctrl.name] = ctrl_data
 
     sos.write_json(data, path)
-    print(f"Finish Writing to {path}")
+    print("Finish Writing to {}".format(path))
 
 
-def get_shape(ctrl: loc.Dag):
+def get_shape(ctrl):  # (ctrl: loc.Dag):
     shape = ctrl.get_shape()
 
     shape_dict = {
@@ -70,7 +71,7 @@ def get_shape(ctrl: loc.Dag):
     return shape_dict
 
 
-def set_shape(ctrl: str, shape_dict: dict):
+def set_shape(ctrl, shape_dict):  # (ctrl: str, shape_dict: dict):
     mc.rebuildCurve(
         ctrl,
         s=shape_dict[ctrl]["span"],
@@ -79,6 +80,6 @@ def set_shape(ctrl: str, shape_dict: dict):
     )
 
     cv_pos = shape_dict[ctrl]["points"]
-    ctrl_cv = mc.ls(f"{ctrl}.cv[*]", fl=True)
+    ctrl_cv = mc.ls("{}.cv[*]".format(ctrl), fl=True)
     for cv, pos in zip(ctrl_cv, cv_pos):
         mc.setAttr(cv, *pos)
