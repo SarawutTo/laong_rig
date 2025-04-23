@@ -58,7 +58,7 @@ class FkRig(rig_base.Rigbase):
         tmp_jnts,
         mod,
         desc="",
-        cp=loc.cp.n_circle,
+        shape=loc.cp.n_circle,
         side=None,
         dtl_ctrl=False,
         ctrl_par=None,
@@ -68,7 +68,7 @@ class FkRig(rig_base.Rigbase):
         self.meta = self.create_meta(ctrl_par)
 
         # Cast
-        tmp_jnts = loc.cast_dags(tmp_jnts)
+        tmp_jnts = loc.to_dags(tmp_jnts)
 
         self.zrs = []
         self.ofsts = []
@@ -78,14 +78,14 @@ class FkRig(rig_base.Rigbase):
 
         for ix, tmp_jnt in enumerate(tmp_jnts):
             idx = ix + 1
-            ctrl = self.init_dag(loc.Controller(cp), "", idx, side, "Ctrl")
+            ctrl = self.init_dag(loc.Controller(shape), "", idx, side, "Ctrl")
             ctrl.set_color(None, 0)
             zr, ofst = self._init_duo_grp(ctrl, "", idx, side)
             jnt = self.init_dag(loc.Joint(at=tmp_jnt), "", idx, side, "Jnt")
 
             if dtl_ctrl:
                 dtl = self.init_dag(
-                    loc.Controller(cp),
+                    loc.Controller(shape),
                     "{}Dtl".format(""),
                     idx,
                     side,

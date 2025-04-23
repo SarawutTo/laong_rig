@@ -6,20 +6,18 @@ from functools import partial
 reload(skin_tools)
 
 
-class WeightClusterUI(object):
+class ClusterWeightUI(object):
     """
-    Class to create a Maya native UI for weight cluster tools (Python 2 compatible).
+    Class to create a Maya native UI for weight cluster tools .
     """
 
-    WINDOW_NAME = "WeightClusterUI"
+    WINDOW_NAME = "ClusterWeightUI"
 
     def __init__(self):
         """
         Initialize the UI.
         """
         self.window = None
-        self.geo_text_field = None
-        self.skin_text_field = None
 
     def show(self):
         """
@@ -30,8 +28,8 @@ class WeightClusterUI(object):
 
         self.window = mc.window(
             self.WINDOW_NAME,
-            title="Weight Cluster Tools",
-            widthHeight=(250, 755),
+            title="Cluster Weight Tools",
+            widthHeight=(300, 400),
             sizeable=True,
         )
         self.layout_ui()
@@ -39,10 +37,10 @@ class WeightClusterUI(object):
 
     def layout_ui(self):
         """
-        Layout the UI components.
+        Layout the UI.
         """
         main_layout = mc.columnLayout(adjustableColumn=1, parent=self.window)
-        mc.text(label="Check Weight Cluster", h=40)
+        mc.text(label="Check Cluster Weight ", h=40)
 
         mc.rowLayout(
             numberOfColumns=3,
@@ -71,7 +69,7 @@ class WeightClusterUI(object):
         # Skin Cluster Section
         mc.text(label="Selected Skin Node:")
         self.skin_text_field = mc.textField(
-            text="skinCluster17", placeholderText="Skin cluster node", h=27
+            placeholderText="Skin cluster name", h=27
         )
         self.lock = mc.checkBox(
             "lockField",
@@ -85,7 +83,7 @@ class WeightClusterUI(object):
         mc.setParent("..")
 
         # Weight List Section
-        mc.text(label="Weight Clusters:", h=40)
+        mc.text(label="Cluster Weights :", h=40)
         mc.text(label="", backgroundColor=[0.2, 0.2, 0.2])
         scroll_base = mc.columnLayout(
             adjustableColumn=True,
@@ -212,6 +210,10 @@ class WeightClusterUI(object):
 
 
 # To launch the UI
-def show_weight_cluster_ui():
-    tool = WeightClusterUI()
+def main():
+    tool = ClusterWeightUI()
     tool.show()
+
+
+if __name__ == "__main__":
+    main()

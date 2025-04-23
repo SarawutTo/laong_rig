@@ -221,19 +221,19 @@ def check_and_connect_attr(source, destination):
         return "Connect {} to {}".format(source, destination)
 
 
-def transfer_weight(geo, fromthis_jnt, tothis_jnt):
+def transfer_weight(geo, skin, fromthis_jnt, tothis_jnt):
     """Transfer Weight form Joint to Joint.
     Args:
         fromthis_jnt(str): Source Joint
         tothis_jnt(str): Destination Joint
 
     """
-    his = mc.listHistory(geo)
-    for each in his:
-        if mc.nodeType(each) == "skinCluster":
-            skincluser = each
-    mc.skinCluster(skincluser, e=True, siv=fromthis_jnt)
-    mc.skinPercent(skincluser, tmw=(fromthis_jnt, tothis_jnt))
+    # his = mc.listHistory(geo)
+    # for each in his:
+    #     if mc.nodeType(each) == "skinCluster":
+    #         skincluser = each
+    mc.skinCluster(skin, e=True, siv=fromthis_jnt)
+    mc.skinPercent(skin, tmw=(fromthis_jnt, tothis_jnt))
 
 
 def get_fbf_matrix_from_trs(dag_translate, dag_matrix, name):
@@ -272,6 +272,18 @@ def get_fbf_matrix_from_trs(dag_translate, dag_matrix, name):
     mc.connectAttr(dag_translate, "{}.in30".format(fbf))
     mc.connectAttr(dag_translate, "{}.in31".format(fbf))
     mc.connectAttr(dag_translate, "{}.in32".format(fbf))
+
+
+def addn_connect_shapedriver(
+    attr, from_attr, to_shapedriver, imin, inmax, omin, omax
+):
+    to_attr = to_shapedriver.add(attr)
+    remap = loc.create_remap(imin, inmax, omin, omax)
+    remap.name = attr + "_Remap"
+    from_attr >> remap.attr("i")
+    remap.attr("ov") >> to_attr
+
+    return remap
 
 
 # path = "maya.ma"
@@ -352,3 +364,15 @@ def copy_shape_ctrl():
 def connect_trs(from_this, to_this):
     for attribute in ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]:
         loc.Dag(from_this).attr(attribute) >> loc.Dag(to_this).attr(attribute)
+
+
+def openChunk(func):
+    def funcWrapper(*args, **kwargs):
+        mc.undoInfo(openChunk=True)
+        try:
+            value = func(*args, **kwargs)
+        finally:
+            mc.undoInfo(closeChunk=True)
+        return value
+
+    return funcWrapper

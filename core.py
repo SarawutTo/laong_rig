@@ -179,6 +179,9 @@ class Dag(Core):
     def set_scl(self, to_this):
         mc.xform(self.name, s=(to_this))
 
+    def center_pivot(self):
+        mc.xform(self.name, cp=True)
+
     def freeze(self):
         mc.makeIdentity(self.name, a=True)
 
@@ -231,6 +234,15 @@ class Null(Dag):
         else:
             null = mc.createNode("transform")
         super(Null, self).__init__(null)
+
+
+class Locator(Dag):
+    def __init__(self, n=None):
+        if n:
+            locator = mc.spaceLocator(n=n)[0]
+        else:
+            locator = mc.spaceLocator()[0]
+        super(Locator, self).__init__(locator)
 
 
 class Group(Dag):
@@ -315,6 +327,21 @@ class Curve(Dag):
     def __init__(self, name):
         super(Curve, self).__init__(name)
 
+    def rotate_shape(self, x, y, z):
+        getpivot = mc.xform(self.name, q=True, rp=True, ws=True)
+        compo = mc.ls("{}.cv[*]".format(self.name), fl=True)
+        mc.select(compo)
+        mc.rotate(x, y, z, p=getpivot, r=True)
+        mc.select(cl=True)
+
+    def scale_shape(self, scale):
+        getpivot = mc.xform(self.name, q=True, sp=True, ws=True)
+        compo = mc.ls("{}.cv[*]".format(self.name), fl=True)
+        mc.select(compo)
+        mc.scale(scale, scale, scale, p=getpivot, r=True)
+        mc.select(cl=True)
+        print(getpivot)
+
     def rebuild(self, *args, **kwargs):
         mc.rebuildCurve(self.name, *args, **kwargs)
 
@@ -334,7 +361,7 @@ class Curve(Dag):
         return point
 
 
-class Controller(Dag):
+class Controller(Curve):
     def __init__(self, cp, n=None):
         if not n:
             n = "Controller"
@@ -348,20 +375,6 @@ class Controller(Dag):
 
         super(Controller, self).__init__(curve)
         self.name = n
-
-    def scale_shape(self, scale):
-        getpivot = mc.xform(self.name, q=True, ws=True, t=True)
-        compo = mc.ls("{}.cv[*]".format(self.name), fl=True)
-        mc.select(compo)
-        mc.scale(scale, scale, scale, p=getpivot, r=True)
-        mc.select(cl=True)
-
-    def rotate_shape(self, x, y, z):
-        getpivot = mc.xform(self.name, q=True, ws=True, t=True)
-        compo = mc.ls("{}.cv[*]".format(self.name), fl=True)
-        mc.select(compo)
-        mc.rotate(x, y, z, p=getpivot, r=True)
-        mc.select(cl=True)
 
     def set_color(self, color=None, tone=0):
         shape = self.get_shape()
@@ -391,7 +404,7 @@ class Node(Core):
         super(Node, self).__init__(node)
 
 
-def cast_dags(object_list):
+def to_dags(object_list):
     return [Dag(obj) for obj in object_list]
 
 
@@ -475,4 +488,9 @@ def orient_constraint(*args, **kwargs):
 
 def scale_constraint(*args, **kwargs):
     con = mc.scaleConstraint(*args, **kwargs)
+    return Dag(con[0])
+
+
+def aim_constraint(*args, **kwargs):
+    con = mc.aimConstraint(*args, **kwargs)
     return Dag(con[0])

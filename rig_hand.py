@@ -31,7 +31,7 @@ class FingerRig(rig_base.Rigbase):
         self.meta.snap(tmpjnts[0])
 
         # Cast
-        tmpjnts = loc.cast_dags(tmpjnts)
+        tmpjnts = loc.to_dags(tmpjnts)
 
         self.zrs = []
         self.exs = []
@@ -73,8 +73,7 @@ class FingerRig(rig_base.Rigbase):
                 zr.snap(tmp_jnt)
 
             if self.ctrls:
-                if tip_ctrl or not is_tip:
-                    zr.set_parent(self.ctrls[-1])
+                zr.set_parent(self.ctrls[-1])
                 jnt.set_parent(self.jnts[-1])
 
             else:

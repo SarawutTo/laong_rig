@@ -15,7 +15,7 @@ reload(rgb)
 reload(rd)
 
 
-def _init_cwd(cwd=""):
+def _init_cwd(cwd="", asset=""):
     """Initilize woking directory
 
     Args:
@@ -23,6 +23,8 @@ def _init_cwd(cwd=""):
     """
     if not cwd:
         cwd = sos.get_cwd()
+    if asset:
+        cwd = os.path.join(cwd, asset)
 
     rig_data = os.path.join(cwd, "rig_data")
     hero = os.path.join(cwd, "hero")
@@ -35,6 +37,7 @@ def _init_cwd(cwd=""):
     ctrl = os.path.join(rig_data, "ctrl")
 
     for path in [
+        cwd,
         rig_data,
         python,
         version,
@@ -47,6 +50,7 @@ def _init_cwd(cwd=""):
     ]:
         resolve = sos.resolve_path(path)
         if not os.path.exists(resolve):
+            print("create", resolve)
             os.mkdir(resolve)
     print("# Finish initialize Path -- {}/".format(sos.resolve_path(cwd)))
 

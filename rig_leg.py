@@ -293,11 +293,17 @@ class IkFkLegRig(rig_base.Rigbase):
         self.ball_roll = self.init_dag(
             loc.Group(self.ankle_roll), "BallRoll", None, self.side, "Grp"
         )
+        self.ball_roll_zr = self.init_dag(
+            loc.Group(self.ball_roll), "BallRoll", None, self.side, "Zr"
+        )
         self.ankle_rot = self.init_dag(
-            loc.Group(self.ball_roll), "AnkleRot", None, self.side, "Grp"
+            loc.Group(self.ball_roll_zr), "AnkleRot", None, self.side, "Grp"
+        )
+        self.ankle_rot_zr = self.init_dag(
+            loc.Group(self.ankle_rot), "AnkleRot", None, self.side, "Zr"
         )
         self.toe_roll = self.init_dag(
-            loc.Group(self.ankle_rot), "ToeRoll", None, self.side, "Grp"
+            loc.Group(self.ankle_rot_zr), "ToeRoll", None, self.side, "Grp"
         )
         self.toe_tap = self.init_dag(
             loc.Null(), "ToeTap", None, self.side, "Grp"
@@ -329,20 +335,24 @@ class IkFkLegRig(rig_base.Rigbase):
         self.in_roll = self.init_dag(
             loc.Group(self.out_roll), "InRoll", None, self.side, "Grp"
         )
+        self.roll_zr = self.init_dag(
+            loc.Group(self.in_roll), "Roll", None, self.side, "Zr"
+        )
 
         # Snap
+        self.roll_zr.snap(in_tmpjnt)
         self.in_roll.snap(in_tmpjnt)
         self.out_roll.snap(out_tmpjnt)
         self.foot_roll_zr.snap(ball_tmpjnt)
         self.heel_roll_zr.snap(heel_tmpjnt)
         self.toe_roll_zr.snap(toe_tmpjnt)
         self.toe_lift_zr.snap(ball_tmpjnt)
-        self.ankle_rot.snap(ankle_tmpjnt)
-        self.ball_roll.snap(ball_tmpjnt)
+        self.ankle_rot_zr.snap(ankle_tmpjnt)
+        self.ball_roll_zr.snap(ball_tmpjnt)
         self.ankle_roll.snap(ankle_tmpjnt)
 
         # Set-Parent
-        self.in_roll.set_parent(self.ik_ctrl)
+        self.roll_zr.set_parent(self.ik_ctrl)
         self.toe_lift_zr.set_parent(self.ankle_rot)
 
         # Set-Parent Ik Handle
@@ -460,7 +470,7 @@ class IkFkLegRig(rig_base.Rigbase):
                 ik_space, self.ik_zr, self.ik_ctrl, self.space
             )
             self.ik_ctrl.attr("space").v = 1
-            mc.renameAttr(self.ik_ctrl.attr("space"), "wristSpace")
+            mc.renameAttr(self.ik_ctrl.attr("space"), "ankleSpace")
 
         self.create_space_switch(
             {

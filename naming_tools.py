@@ -30,7 +30,7 @@ def deconstruct(obj_name):  #: Union[str, loc.Core]
 
 def construct(name, index, side, _type):
     name_list = []
-    print(name, index, side, _type)
+    # print(name, index, side, _type)
     if index:
         index = "{:02d}".format(int(index))
 
