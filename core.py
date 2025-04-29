@@ -12,19 +12,19 @@ main_grp = rgb.MainGroup
 
 class Attribute(object):
     def __init__(self, node, attr):
-        self.__nodeattr = "{}.{}".format(node, attr)
         self.__attr = attr
         self.__node = node
+        self.__plug = "{}.{}".format(node, attr)
 
     def __str__(self):
-        return self.__nodeattr
+        return self.__plug
 
     def __rshift__(self, destination):
         mc.connectAttr(self, destination, f=True)
 
     @property
     def attr(self):
-        return self.__nodeattr
+        return self.__plug
 
     @property
     def value(self):
@@ -33,6 +33,16 @@ class Attribute(object):
     @value.setter
     def value(self, new_value):
         mc.setAttr(self.attr, new_value)
+
+    @property
+    def last_id(self):
+        max_id = mc.getAttr(self.attr, size=True)
+        for idx in range(max_id + 1):
+            plug = "{}[{}]".format(self.__plug, idx)
+            if not mc.listConnections(plug, d=True):
+                node, attr = plug.split(".", 1)
+
+                return Attribute(node, attr)
 
     def limit(self, min, max):
         min_enable = 1 if min is not None else 0
@@ -340,7 +350,6 @@ class Curve(Dag):
         mc.select(compo)
         mc.scale(scale, scale, scale, p=getpivot, r=True)
         mc.select(cl=True)
-        print(getpivot)
 
     def rebuild(self, *args, **kwargs):
         mc.rebuildCurve(self.name, *args, **kwargs)
